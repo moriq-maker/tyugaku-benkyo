@@ -18,13 +18,20 @@ const GRADE_LABELS: Record<number, string> = {
   3: "中学3年生",
 };
 
-// スコアに応じたメッセージ
-function getScoreMessage(rate: number): { emoji: string; message: string } {
-  if (rate === 100) return { emoji: "🏆", message: "パーフェクト！完璧です！" };
-  if (rate >= 80)  return { emoji: "🎉", message: "すごい！よく頑張りました！" };
-  if (rate >= 60)  return { emoji: "😊", message: "いい感じ！もう少しで合格圏！" };
-  if (rate >= 40)  return { emoji: "📚", message: "復習してもう一度チャレンジしよう！" };
-  return { emoji: "💪", message: "まずは基礎からしっかり復習しよう！" };
+function getScoreMessage(rate: number): string {
+  if (rate === 100) return "全問正解です。この範囲はかなり安定しています。";
+  if (rate >= 80) return "よく取れています。間違えた問題だけ確認しましょう。";
+  if (rate >= 60) return "基礎は見えています。解説を見てもう一度解くと定着します。";
+  return "まずは間違えた問題を解き直して、出題形式に慣れましょう。";
+}
+
+function getChoice(problem: QuizResult["problem"], answer: "A" | "B" | "C" | "D") {
+  return {
+    A: problem.choice_a,
+    B: problem.choice_b,
+    C: problem.choice_c,
+    D: problem.choice_d,
+  }[answer];
 }
 
 export default function ResultPage() {
@@ -40,116 +47,106 @@ export default function ResultPage() {
   }, [stored]);
 
   useEffect(() => {
-    if (!data) {
-      router.push("/dashboard");
-    }
+    if (!data) router.push("/dashboard");
   }, [data, router]);
 
   if (!data) {
-    return (
-      <div className="py-20 text-center font-bold text-slate-400">読み込み中...</div>
-    );
+    return <div className="py-20 text-center text-sm font-semibold text-slate-500">読み込み中...</div>;
   }
 
   const { results, subject, grade, mode } = data;
-  const correct = results.filter((r) => r.isCorrect).length;
+  const correct = results.filter((result) => result.isCorrect).length;
   const wrong = results.length - correct;
   const total = results.length;
   const rate = Math.round((correct / total) * 100);
-  const { emoji, message } = getScoreMessage(rate);
 
   return (
-    <div>
-      {/* スコアカード */}
-      <div className="mb-8 rounded-[2rem] bg-slate-950 p-8 text-center text-white shadow-xl shadow-slate-200">
-        <div className="mb-3 text-6xl">{emoji}</div>
-        <p className="mb-1 text-sm font-bold text-slate-400">
-          {subject.icon} {subject.name} / {GRADE_LABELS[grade]}{mode === "review" ? " / 解き直し" : ""}
-        </p>
-        <div className="mb-2 text-7xl font-extrabold">{rate}%</div>
-        <p className="text-lg font-bold text-slate-300">{correct} / {total}問正解</p>
-        <p className="mt-4 text-lg font-black">{message}</p>
-      </div>
-
-      {/* 問題別の振り返り */}
-      <h2 className="mb-4 text-xl font-black text-slate-900">問題の振り返り</h2>
-      <div className="mb-8 space-y-4">
-        {results.map((result, i) => (
-          <div
-            key={result.problem.id}
-            className={`rounded-3xl border-2 bg-white p-5 shadow-sm ${
-              result.isCorrect ? "border-emerald-200" : "border-red-200"
-            }`}
-          >
-            <div className="flex items-start gap-3">
-              <span className="mt-0.5 text-xl">
-                {result.isCorrect ? "✅" : "❌"}
-              </span>
-              <div className="flex-1">
-                {result.problem.category && (
-                  <p className="mb-2 text-xs font-black text-slate-400">{result.problem.category}</p>
-                )}
-                <p className="mb-2 font-black leading-7 text-slate-900">
-                  Q{i + 1}. {result.problem.question}
-                </p>
-                {!result.isCorrect && (
-                  <div className="space-y-1 text-sm">
-                    <p className="text-red-600">
-                      あなたの答え：
-                      {result.userAnswer === "A" && result.problem.choice_a}
-                      {result.userAnswer === "B" && result.problem.choice_b}
-                      {result.userAnswer === "C" && result.problem.choice_c}
-                      {result.userAnswer === "D" && result.problem.choice_d}
-                    </p>
-                    <p className="text-emerald-700 font-medium">
-                      正解：
-                      {result.problem.answer === "A" && result.problem.choice_a}
-                      {result.problem.answer === "B" && result.problem.choice_b}
-                      {result.problem.answer === "C" && result.problem.choice_c}
-                      {result.problem.answer === "D" && result.problem.choice_d}
-                    </p>
-                  </div>
-                )}
-                {result.problem.explanation && (
-                  <p className="mt-3 rounded-2xl bg-blue-50 px-4 py-3 text-sm font-medium leading-6 text-blue-700">
-                    {result.problem.explanation}
-                  </p>
-                )}
-              </div>
+    <div className="space-y-6">
+      <section className="rounded-lg border border-slate-200 bg-white p-5 sm:p-6">
+        <div className="grid gap-6 md:grid-cols-[220px_1fr] md:items-center">
+          <div className="rounded-lg bg-slate-900 p-5 text-white">
+            <p className="text-sm font-semibold text-slate-300">Score</p>
+            <p className="mt-2 text-5xl font-bold">{rate}%</p>
+            <p className="mt-2 text-sm text-slate-300">{correct}/{total}問 正解</p>
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-slate-500">
+              {subject.name} / {GRADE_LABELS[grade]}{mode === "review" ? " / 解き直し" : ""}
+            </p>
+            <h1 className="mt-2 text-2xl font-bold text-slate-950">結果</h1>
+            <p className="mt-3 text-sm leading-6 text-slate-600">{getScoreMessage(rate)}</p>
+            <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+              {wrong > 0 && (
+                <Link
+                  href={`/quiz/${subject.name_en}?grade=${grade}&review=wrong`}
+                  className="rounded-md bg-red-600 px-4 py-2.5 text-center text-sm font-bold text-white transition hover:bg-red-700"
+                >
+                  間違えた問題を解き直す
+                </Link>
+              )}
+              <Link
+                href={`/quiz/${subject.name_en}?grade=${grade}`}
+                className="rounded-md bg-slate-900 px-4 py-2.5 text-center text-sm font-bold text-white transition hover:bg-slate-700"
+              >
+                同じ条件で10問
+              </Link>
+              <Link
+                href="/dashboard"
+                className="rounded-md border border-slate-300 bg-white px-4 py-2.5 text-center text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+              >
+                ダッシュボード
+              </Link>
             </div>
           </div>
-        ))}
-      </div>
+        </div>
+      </section>
 
-      {/* アクションボタン */}
-      <div className="flex flex-col gap-3">
-        <Link
-          href={`/quiz/${subject.name_en}?grade=${grade}`}
-          className="block rounded-2xl bg-slate-950 py-4 text-center font-black text-white shadow-lg shadow-slate-300 transition hover:bg-slate-800"
-        >
-          もう一度挑戦する
-        </Link>
-        {wrong > 0 && (
-          <Link
-            href={`/quiz/${subject.name_en}?grade=${grade}&review=wrong`}
-            className="block rounded-2xl bg-red-600 py-4 text-center font-black text-white shadow-lg shadow-red-200 transition hover:bg-red-700"
-          >
-            間違えた問題だけ解き直す
-          </Link>
-        )}
-        <Link
-          href={`/subjects/${subject.name_en}`}
-          className="block rounded-2xl border border-indigo-100 bg-white py-4 text-center font-black text-indigo-700 shadow-sm transition hover:bg-indigo-50"
-        >
-          別の学年を選ぶ
-        </Link>
-        <Link
-          href="/dashboard"
-          className="block py-4 text-center font-bold text-slate-500 hover:text-slate-700"
-        >
-          ダッシュボードへ戻る
-        </Link>
-      </div>
+      <section>
+        <h2 className="mb-3 text-lg font-bold text-slate-950">振り返り</h2>
+        <div className="space-y-3">
+          {results.map((result, index) => (
+            <div
+              key={result.problem.id}
+              className={`rounded-lg border bg-white p-4 ${
+                result.isCorrect ? "border-slate-200" : "border-red-200"
+              }`}
+            >
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+                <span
+                  className={`inline-flex w-fit rounded-md px-2 py-1 text-xs font-bold ${
+                    result.isCorrect
+                      ? "bg-emerald-50 text-emerald-700"
+                      : "bg-red-50 text-red-700"
+                  }`}
+                >
+                  {result.isCorrect ? "正解" : "不正解"}
+                </span>
+                <div className="flex-1">
+                  <p className="text-xs font-bold text-slate-400">{result.problem.category}</p>
+                  <p className="mt-1 text-sm font-bold leading-6 text-slate-950">
+                    Q{index + 1}. {result.problem.question}
+                  </p>
+                  {!result.isCorrect && (
+                    <div className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
+                      <p className="rounded-md bg-red-50 px-3 py-2 text-red-800">
+                        あなた: {getChoice(result.problem, result.userAnswer)}
+                      </p>
+                      <p className="rounded-md bg-emerald-50 px-3 py-2 text-emerald-800">
+                        正解: {getChoice(result.problem, result.problem.answer)}
+                      </p>
+                    </div>
+                  )}
+                  {result.problem.explanation && (
+                    <p className="mt-3 rounded-md bg-slate-50 px-3 py-2 text-sm leading-6 text-slate-600">
+                      {result.problem.explanation}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }

@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f6f8fb;
-  --foreground: #14213d;
+  --background: #f4f6f8;
+  --foreground: #172033;
 }
 
 @theme inline {
@@ -21,4 +21,9 @@ button,
 a,
 input {
   -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background: #c7d2fe;
+  color: #111827;
 }

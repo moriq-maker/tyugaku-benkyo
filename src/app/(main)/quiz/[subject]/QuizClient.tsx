@@ -1,20 +1,18 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Problem, Subject, QuizResult } from "@/types";
 
 const CHOICES = ["A", "B", "C", "D"] as const;
-const CHOICE_LABELS: Record<string, string> = {
-  A: "A", B: "B", C: "C", D: "D",
-};
 
-// 難易度の星表示
-function DifficultyStars({ level }: { level: number }) {
+function Difficulty({ level }: { level: number }) {
   return (
-    <span className="text-amber-400 text-sm">
-      {"★".repeat(level)}{"☆".repeat(3 - level)}
+    <span className="rounded-md bg-amber-50 px-2 py-1 text-xs font-bold text-amber-700">
+      {"★".repeat(level)}
+      {"☆".repeat(3 - level)}
     </span>
   );
 }
@@ -39,8 +37,8 @@ export default function QuizClient({
 
   const current = problems[currentIndex];
   const isLastQuestion = currentIndex === problems.length - 1;
+  const progress = Math.round(((currentIndex + 1) / problems.length) * 100);
 
-  // 選択肢の内容を choice_a〜choice_d から取得
   const getChoiceText = (choice: string): string => {
     const map: Record<string, string> = {
       A: current.choice_a,
@@ -51,14 +49,12 @@ export default function QuizClient({
     return map[choice] ?? "";
   };
 
-  // 選択肢を選んだときの処理
   const handleSelect = useCallback((choice: string) => {
     if (showAnswer) return;
     setSelected(choice);
     setShowAnswer(true);
   }, [showAnswer]);
 
-  // 次の問題または結果ページへ
   const handleNext = useCallback(async () => {
     if (!selected) return;
 
@@ -70,7 +66,6 @@ export default function QuizClient({
     };
     const updatedResults = [...results, newResult];
 
-    // 最後の問題なら回答を保存して結果ページへ
     if (isLastQuestion) {
       setSaving(true);
       try {
@@ -78,10 +73,10 @@ export default function QuizClient({
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           await supabase.from("user_answers").insert(
-            updatedResults.map((r) => ({
+            updatedResults.map((result) => ({
               user_id: user.id,
-              problem_id: r.problem.id,
-              is_correct: r.isCorrect,
+              problem_id: result.problem.id,
+              is_correct: result.isCorrect,
             }))
           );
         }
@@ -89,7 +84,6 @@ export default function QuizClient({
         console.error("回答の保存に失敗しました:", e);
       }
 
-      // 結果をsessionStorageに保存してページ遷移
       sessionStorage.setItem(
         "quiz_results",
         JSON.stringify({
@@ -104,97 +98,104 @@ export default function QuizClient({
     }
 
     setResults(updatedResults);
-    setCurrentIndex((i) => i + 1);
+    setCurrentIndex((index) => index + 1);
     setSelected(null);
     setShowAnswer(false);
   }, [selected, current, results, isLastQuestion, subject, grade, mode, router]);
 
   return (
-    <div>
-      {/* 進捗バー */}
-      <div className="mb-6 rounded-3xl border border-white bg-white/85 p-5 shadow-sm backdrop-blur">
-        <div className="mb-3 flex justify-between text-sm font-black text-slate-600">
-          <span>{subject.icon} {subject.name}・中学{grade}年生{mode === "review" ? "・解き直し" : ""}</span>
-          <span>{currentIndex + 1} / {problems.length}問</span>
+    <div className="mx-auto max-w-3xl">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <Link
+          href={`/subjects/${subject.name_en}`}
+          className="rounded-md px-2 py-1 text-sm font-semibold text-slate-600 transition hover:bg-white hover:text-slate-950"
+        >
+          ← {subject.name}
+        </Link>
+        <span className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600">
+          {mode === "review" ? "解き直し" : "通常演習"}
+        </span>
+      </div>
+
+      <section className="mb-4 rounded-lg border border-slate-200 bg-white p-4">
+        <div className="mb-3 flex items-center justify-between text-sm">
+          <span className="font-bold text-slate-950">
+            {currentIndex + 1} / {problems.length}
+          </span>
+          <span className="font-semibold text-slate-500">{progress}%</span>
         </div>
-        <div className="h-3 rounded-full bg-slate-200">
+        <div className="h-2 rounded-full bg-slate-100">
           <div
-            className="h-3 rounded-full bg-slate-950 transition-all duration-300"
-            style={{ width: `${((currentIndex + 1) / problems.length) * 100}%` }}
+            className="h-2 rounded-full bg-indigo-600 transition-all duration-300"
+            style={{ width: `${progress}%` }}
           />
         </div>
-      </div>
+      </section>
 
-      {/* 問題カード */}
-      <div className="mb-4 rounded-[2rem] border border-white bg-white p-6 shadow-xl shadow-slate-200">
-        <div className="mb-4 flex items-center justify-between">
-          <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-500">
-            問題 {currentIndex + 1}・{current.category}
-          </span>
-          <DifficultyStars level={current.difficulty} />
-        </div>
-        {current.passage && (
-          <div className="mb-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-medium leading-7 text-slate-700">
-            {current.passage}
+      <section className="rounded-lg border border-slate-200 bg-white">
+        <div className="border-b border-slate-200 p-5">
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-bold text-slate-600">
+              {current.category}
+            </span>
+            <Difficulty level={current.difficulty} />
           </div>
-        )}
-        <p className="text-xl font-black leading-relaxed text-slate-900">
-          {current.question}
-        </p>
-      </div>
-
-      {/* 選択肢 */}
-      <div className="space-y-3 mb-6">
-        {CHOICES.map((choice) => {
-          const text = getChoiceText(choice);
-          const isCorrect = choice === current.answer;
-          const isSelected = choice === selected;
-
-          let choiceStyle =
-            "bg-white border-slate-200 text-slate-800 hover:border-indigo-300 hover:bg-indigo-50";
-
-          if (showAnswer) {
-            if (isCorrect) {
-              choiceStyle = "bg-emerald-50 border-emerald-400 text-emerald-800";
-            } else if (isSelected && !isCorrect) {
-              choiceStyle = "bg-red-50 border-red-400 text-red-800";
-            } else {
-              choiceStyle = "bg-white border-slate-100 text-slate-400";
-            }
-          }
-
-          return (
-            <button
-              key={choice}
-              onClick={() => handleSelect(choice)}
-              disabled={showAnswer}
-              className={`flex w-full items-center gap-4 rounded-2xl border-2 px-5 py-4 text-left shadow-sm transition-all ${choiceStyle}`}
-            >
-              <span className="grid h-8 w-8 place-items-center rounded-xl bg-slate-100 text-lg font-black">{CHOICE_LABELS[choice]}</span>
-              <span className="flex-1 font-bold">{text}</span>
-              {showAnswer && isCorrect && <span className="text-emerald-500">✓</span>}
-              {showAnswer && isSelected && !isCorrect && <span className="text-red-500">✗</span>}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* 解説表示 */}
-      {showAnswer && current.explanation && (
-        <div className="mb-6 rounded-2xl border border-blue-100 bg-blue-50 p-4">
-          <p className="mb-1 text-sm font-black text-blue-800">解説</p>
-          <p className="text-sm font-medium leading-6 text-blue-700">{current.explanation}</p>
+          {current.passage && (
+            <div className="mb-4 rounded-md border border-slate-200 bg-slate-50 p-4 text-sm leading-7 text-slate-700">
+              {current.passage}
+            </div>
+          )}
+          <h1 className="text-xl font-bold leading-8 text-slate-950">
+            {current.question}
+          </h1>
         </div>
+
+        <div className="space-y-2 p-4">
+          {CHOICES.map((choice) => {
+            const text = getChoiceText(choice);
+            const isCorrect = choice === current.answer;
+            const isSelected = choice === selected;
+
+            let choiceStyle = "border-slate-200 bg-white text-slate-800 hover:border-slate-400";
+            if (showAnswer) {
+              if (isCorrect) choiceStyle = "border-emerald-500 bg-emerald-50 text-emerald-900";
+              else if (isSelected) choiceStyle = "border-red-500 bg-red-50 text-red-900";
+              else choiceStyle = "border-slate-200 bg-slate-50 text-slate-400";
+            }
+
+            return (
+              <button
+                key={choice}
+                onClick={() => handleSelect(choice)}
+                disabled={showAnswer}
+                className={`flex w-full items-start gap-3 rounded-md border px-4 py-3 text-left transition ${choiceStyle}`}
+              >
+                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-white text-sm font-bold text-slate-700">
+                  {choice}
+                </span>
+                <span className="flex-1 text-sm font-semibold leading-6">{text}</span>
+                {showAnswer && isCorrect && <span className="text-sm font-bold text-emerald-700">正解</span>}
+                {showAnswer && isSelected && !isCorrect && <span className="text-sm font-bold text-red-700">選択</span>}
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      {showAnswer && current.explanation && (
+        <section className="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-4">
+          <p className="text-sm font-bold text-blue-900">解説</p>
+          <p className="mt-2 text-sm leading-6 text-blue-900">{current.explanation}</p>
+        </section>
       )}
 
-      {/* 次へ / 結果を見るボタン */}
       {showAnswer && (
         <button
           onClick={handleNext}
           disabled={saving}
-          className="w-full rounded-2xl bg-slate-950 py-4 text-lg font-black text-white shadow-lg shadow-slate-300 transition hover:bg-slate-800 disabled:opacity-60"
+          className="mt-4 w-full rounded-md bg-slate-900 py-3 text-sm font-bold text-white transition hover:bg-slate-700 disabled:opacity-60"
         >
-          {saving ? "保存中..." : isLastQuestion ? "結果を見る" : "次の問題へ →"}
+          {saving ? "保存中..." : isLastQuestion ? "結果を見る" : "次の問題へ"}
         </button>
       )}
     </div>

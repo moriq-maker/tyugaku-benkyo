@@ -8,11 +8,11 @@ const GRADE_LABELS: Record<number, string> = {
   3: "中学3年生",
 };
 
-const DIFFICULTY_LABELS: Record<number, string> = {
-  1: "基礎",
-  2: "標準",
-  3: "応用",
-};
+const DIFFICULTY_LABELS = [
+  ["基礎", "用語や基本計算の確認"],
+  ["標準", "テストでよく出る形式"],
+  ["応用", "少し考える確認問題"],
+];
 
 export default async function SubjectPage({
   params,
@@ -23,7 +23,6 @@ export default async function SubjectPage({
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  // 科目情報を取得
   const { data: subject } = await supabase
     .from("subjects")
     .select("*")
@@ -32,16 +31,20 @@ export default async function SubjectPage({
 
   if (!subject) notFound();
 
-  // 学年ごとの問題数を集計
   const { data: problems } = await supabase
     .from("problems")
-    .select("id, grade, difficulty")
+    .select("id, grade, difficulty, category")
     .eq("subject_id", subject.id);
 
-  const gradeGroups = [1, 2, 3].map((grade) => ({
-    grade,
-    count: problems?.filter((p) => p.grade === grade).length ?? 0,
-  }));
+  const gradeGroups = [1, 2, 3].map((grade) => {
+    const gradeProblems = problems?.filter((problem) => problem.grade === grade) ?? [];
+    const categories = [...new Set(gradeProblems.map((problem) => problem.category))].slice(0, 5);
+    return {
+      grade,
+      count: gradeProblems.length,
+      categories,
+    };
+  });
 
   let wrongCountsByGrade: Record<number, number> = {};
   if (user) {
@@ -51,104 +54,126 @@ export default async function SubjectPage({
       .eq("user_id", user.id)
       .order("answered_at", { ascending: false });
 
-    const latestByProblem = new Map<string, { is_correct: boolean; grade: number | null }>();
+    const latestByProblem = new Map<string, { is_correct: boolean; grade: number }>();
 
     answers?.forEach((answer) => {
       if (latestByProblem.has(answer.problem_id)) return;
       const problem = answer.problems as unknown as { subject_id: string; grade: number } | null;
       if (!problem || problem.subject_id !== subject.id) return;
-      const grade = problem.grade;
       latestByProblem.set(answer.problem_id, {
         is_correct: answer.is_correct,
-        grade,
+        grade: problem.grade,
       });
     });
 
     wrongCountsByGrade = [...latestByProblem.values()].reduce<Record<number, number>>((acc, item) => {
-      if (!item.is_correct && item.grade) {
-        acc[item.grade] = (acc[item.grade] ?? 0) + 1;
-      }
+      if (!item.is_correct) acc[item.grade] = (acc[item.grade] ?? 0) + 1;
       return acc;
     }, {});
   }
 
   return (
-    <div>
-      <Link href="/dashboard" className="mb-6 inline-flex rounded-full bg-white px-4 py-2 text-sm font-bold text-slate-600 shadow-sm transition hover:text-indigo-700">
-        ← ダッシュボードへ戻る
+    <div className="space-y-6">
+      <Link
+        href="/dashboard"
+        className="inline-flex rounded-md px-2 py-1 text-sm font-semibold text-slate-600 transition hover:bg-white hover:text-slate-950"
+      >
+        ← ダッシュボード
       </Link>
 
-      <section className="mb-8 rounded-[2rem] bg-white/85 p-6 shadow-xl shadow-slate-200 backdrop-blur sm:p-8">
-        <div className="flex items-center gap-4">
-        <span className="grid h-16 w-16 place-items-center rounded-3xl bg-slate-950 text-2xl font-black text-white">
-          {subject.icon}
-        </span>
-        <div>
-          <p className="text-sm font-black text-indigo-600">中1・1学期中間テスト範囲</p>
-          <h1 className="mt-1 text-3xl font-black text-slate-950">{subject.name}</h1>
-          <p className="mt-2 text-sm font-medium leading-6 text-slate-500">
-            今は中学1年生の4月〜6月範囲だけを出題します。
-          </p>
-        </div>
+      <section className="rounded-lg border border-slate-200 bg-white p-5 sm:p-6">
+        <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+          <div className="flex items-start gap-4">
+            <span className="grid h-12 w-12 place-items-center rounded-md bg-slate-900 text-base font-bold text-white">
+              {subject.icon}
+            </span>
+            <div>
+              <p className="text-sm font-semibold text-slate-500">中1・1学期中間テスト範囲</p>
+              <h1 className="mt-1 text-3xl font-bold text-slate-950">{subject.name}</h1>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+                通常演習はランダム10問。間違えた問題がある場合は、解き直しで最新の不正解だけを復習できます。
+              </p>
+            </div>
+          </div>
+          <div className="rounded-md border border-slate-200 bg-slate-50 px-4 py-3">
+            <p className="text-xs font-semibold text-slate-500">収録問題</p>
+            <p className="mt-1 text-2xl font-bold text-slate-950">
+              {gradeGroups.reduce((sum, item) => sum + item.count, 0)}
+              <span className="ml-1 text-sm text-slate-500">問</span>
+            </p>
+          </div>
         </div>
       </section>
 
-      <div className="grid grid-cols-1 gap-4">
-        {gradeGroups.map(({ grade, count }) => {
+      <section className="grid gap-4">
+        {gradeGroups.map(({ grade, count, categories }) => {
           const wrongCount = wrongCountsByGrade[grade] ?? 0;
+          const enabled = count > 0;
 
           return (
-          <div
-            key={grade}
-            className={`rounded-3xl border p-6 transition
-              ${count > 0 ? "border-indigo-100 bg-white shadow-sm hover:-translate-y-0.5 hover:shadow-lg" : "cursor-not-allowed border-slate-100 bg-white/60 opacity-55"}`}
-          >
-            <div className="flex items-center justify-between gap-4">
-            <div>
-              <h2 className="mb-1 text-xl font-black text-slate-900">
-                {GRADE_LABELS[grade]}
-              </h2>
-              <p className="text-sm font-bold text-slate-500">
-                {count > 0 ? `${count}問` : "問題準備中"}
-              </p>
-              {wrongCount > 0 && (
-                <p className="mt-1 text-sm font-black text-red-600">
-                  解き直し対象 {wrongCount}問
-                </p>
-              )}
+            <div
+              key={grade}
+              className={`rounded-lg border bg-white p-5 ${
+                enabled ? "border-slate-200" : "border-slate-200 opacity-60"
+              }`}
+            >
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <h2 className="text-lg font-bold text-slate-950">{GRADE_LABELS[grade]}</h2>
+                  <p className="mt-1 text-sm text-slate-500">
+                    {enabled ? `${count}問から10問を出題` : "問題準備中"}
+                  </p>
+                  {categories.length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {categories.map((category) => (
+                        <span
+                          key={category}
+                          className="rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600"
+                        >
+                          {category}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  {wrongCount > 0 && (
+                    <Link
+                      href={`/quiz/${subjectEn}?grade=${grade}&review=wrong`}
+                      className="rounded-md bg-red-600 px-4 py-2.5 text-center text-sm font-bold text-white transition hover:bg-red-700"
+                    >
+                      解き直し {wrongCount}問
+                    </Link>
+                  )}
+                  {enabled && (
+                    <Link
+                      href={`/quiz/${subjectEn}?grade=${grade}`}
+                      className="rounded-md bg-slate-900 px-4 py-2.5 text-center text-sm font-bold text-white transition hover:bg-slate-700"
+                    >
+                      10問スタート
+                    </Link>
+                  )}
+                </div>
+              </div>
             </div>
-            <div className="flex flex-col gap-2">
-              {count > 0 && (
-                <Link
-                  href={`/quiz/${subjectEn}?grade=${grade}`}
-                  className="rounded-full bg-slate-950 px-5 py-2.5 text-center text-sm font-black text-white"
-                >
-                  スタート
-                </Link>
-              )}
-              {wrongCount > 0 && (
-                <Link
-                  href={`/quiz/${subjectEn}?grade=${grade}&review=wrong`}
-                  className="rounded-full bg-red-600 px-5 py-2.5 text-center text-sm font-black text-white"
-                >
-                  解き直し
-                </Link>
-              )}
-            </div>
-            </div>
-          </div>
           );
         })}
-      </div>
+      </section>
 
-      <div className="mt-8 rounded-3xl border border-amber-100 bg-amber-50 p-5">
-        <h3 className="mb-2 font-black text-amber-900">難易度について</h3>
-        <ul className="space-y-1 text-sm font-bold text-amber-700">
-          {Object.entries(DIFFICULTY_LABELS).map(([key, label]) => (
-            <li key={key}>★{"★".repeat(Number(key) - 1)}{"☆".repeat(3 - Number(key))} {label}</li>
+      <section className="rounded-lg border border-slate-200 bg-white p-5">
+        <h3 className="text-sm font-bold text-slate-950">難易度</h3>
+        <div className="mt-3 grid gap-3 md:grid-cols-3">
+          {DIFFICULTY_LABELS.map(([label, description], index) => (
+            <div key={label} className="rounded-md border border-slate-200 bg-slate-50 p-3">
+              <p className="text-sm font-bold text-slate-800">
+                {"★".repeat(index + 1)}
+                <span className="ml-2">{label}</span>
+              </p>
+              <p className="mt-1 text-xs leading-5 text-slate-500">{description}</p>
+            </div>
           ))}
-        </ul>
-      </div>
+        </div>
+      </section>
     </div>
   );
 }

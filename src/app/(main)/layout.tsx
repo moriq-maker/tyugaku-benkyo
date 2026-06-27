@@ -18,9 +18,9 @@ export default async function MainLayout({
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,#dbeafe_0,#f6f8fb_34%,#eef2ff_72%,#f8fafc_100%)] flex flex-col">
+    <div className="min-h-screen bg-[#f4f6f8] flex flex-col">
       <Header email={user.email ?? ""} />
-      <main className="flex-1 max-w-5xl w-full mx-auto px-4 py-6 sm:px-6 sm:py-8">
+      <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-5 sm:px-6 sm:py-7">
         {children}
       </main>
     </div>
