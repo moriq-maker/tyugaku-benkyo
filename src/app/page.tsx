@@ -15,39 +15,40 @@ const flow = [
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-[#f4f6f8] text-slate-950">
-      <header className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5">
+      <header className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-4 sm:px-5 sm:py-5">
         <Link href="/" className="flex items-center gap-3">
           <span className="grid h-9 w-9 place-items-center rounded-md bg-slate-900 text-sm font-black text-white">
             T
           </span>
           <span className="text-base font-bold">テスタン</span>
         </Link>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <Link
             href="/auth/login"
-            className="rounded-md px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white"
+            className="rounded-md px-2.5 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white sm:px-4"
           >
             ログイン
           </Link>
           <Link
             href="/auth/signup"
-            className="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700"
+            className="rounded-md bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 sm:px-4"
           >
-            無料で始める
+            <span className="sm:hidden">始める</span>
+            <span className="hidden sm:inline">無料で始める</span>
           </Link>
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-5 pb-16 pt-10">
+      <main className="mx-auto max-w-6xl px-4 pb-12 pt-6 sm:px-5 sm:pb-16 sm:pt-10">
         <section className="grid gap-10 lg:grid-cols-[1fr_400px] lg:items-end">
           <div>
             <p className="mb-4 inline-flex rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-600">
               中学1年生の4月から6月に集中
             </p>
-            <h1 className="max-w-3xl text-4xl font-bold leading-tight tracking-normal text-slate-950 sm:text-6xl">
+            <h1 className="max-w-3xl text-3xl font-bold leading-tight tracking-normal text-slate-950 sm:text-5xl lg:text-6xl">
               テスト前に、何を間違えたかまで残す。
             </h1>
-            <p className="mt-6 max-w-2xl text-base leading-8 text-slate-600">
+            <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-600 sm:mt-6 sm:text-base sm:leading-8">
               テスタンは、定期テスト範囲の問題を解き、間違いを記録し、解き直しまでつなげる学習サポートアプリです。
               まずは中1の1学期中間範囲に絞って、毎日の復習を軽く始められる形にしています。
             </p>

@@ -108,9 +108,9 @@ export default function QuizClient({
       <div className="mb-4 flex items-center justify-between gap-3">
         <Link
           href={`/subjects/${subject.name_en}`}
-          className="rounded-md px-2 py-1 text-sm font-semibold text-slate-600 transition hover:bg-white hover:text-slate-950"
+          className="min-w-0 rounded-md px-2 py-1 text-sm font-semibold text-slate-600 transition hover:bg-white hover:text-slate-950"
         >
-          ← {subject.name}
+          <span className="truncate">← {subject.name}</span>
         </Link>
         <span className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600">
           {mode === "review" ? "解き直し" : "通常演習"}
@@ -173,9 +173,9 @@ export default function QuizClient({
                 <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-white text-sm font-bold text-slate-700">
                   {choice}
                 </span>
-                <span className="flex-1 text-sm font-semibold leading-6">{text}</span>
-                {showAnswer && isCorrect && <span className="text-sm font-bold text-emerald-700">正解</span>}
-                {showAnswer && isSelected && !isCorrect && <span className="text-sm font-bold text-red-700">選択</span>}
+                <span className="min-w-0 flex-1 text-sm font-semibold leading-6">{text}</span>
+                {showAnswer && isCorrect && <span className="shrink-0 text-xs font-bold text-emerald-700 sm:text-sm">正解</span>}
+                {showAnswer && isSelected && !isCorrect && <span className="shrink-0 text-xs font-bold text-red-700 sm:text-sm">選択</span>}
               </button>
             );
           })}

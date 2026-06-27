@@ -80,18 +80,24 @@ export default async function DashboardPage() {
               中1・1学期中間範囲から10問ずつ出題します。間違えた問題は科目ページからまとめて解き直せます。
             </p>
           </div>
-          <div className="grid grid-cols-3 gap-3 lg:w-[420px]">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 lg:w-[420px]">
             <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
-              <p className="text-xs font-semibold text-slate-500">回答</p>
-              <p className="mt-1 text-xl font-bold text-slate-950">{totalAnswered}</p>
+              <div className="flex items-center justify-between gap-3 sm:block">
+                <p className="text-xs font-semibold text-slate-500">回答</p>
+                <p className="mt-0 text-xl font-bold text-slate-950 sm:mt-1">{totalAnswered}</p>
+              </div>
             </div>
             <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
-              <p className="text-xs font-semibold text-slate-500">正答率</p>
-              <p className="mt-1 text-xl font-bold text-slate-950">{overallRate}%</p>
+              <div className="flex items-center justify-between gap-3 sm:block">
+                <p className="text-xs font-semibold text-slate-500">正答率</p>
+                <p className="mt-0 text-xl font-bold text-slate-950 sm:mt-1">{overallRate}%</p>
+              </div>
             </div>
             <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
-              <p className="text-xs font-semibold text-slate-500">復習</p>
-              <p className="mt-1 text-xl font-bold text-slate-950">{wrongTotal}</p>
+              <div className="flex items-center justify-between gap-3 sm:block">
+                <p className="text-xs font-semibold text-slate-500">復習</p>
+                <p className="mt-0 text-xl font-bold text-slate-950 sm:mt-1">{wrongTotal}</p>
+              </div>
             </div>
           </div>
         </div>

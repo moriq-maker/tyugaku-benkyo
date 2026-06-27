@@ -59,7 +59,7 @@ export default function SignupPage() {
 
   if (done) {
     return (
-      <div className="min-h-screen bg-[#f4f6f8] px-4 py-10">
+      <div className="min-h-screen bg-[#f4f6f8] px-4 py-6 sm:py-10">
         <div className="mx-auto max-w-md rounded-lg border border-slate-200 bg-white p-6">
           <Link href="/" className="inline-flex items-center gap-2">
             <span className="grid h-8 w-8 place-items-center rounded-md bg-slate-900 text-xs font-black text-white">T</span>
@@ -81,7 +81,7 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f4f6f8] px-4 py-10">
+    <div className="min-h-screen bg-[#f4f6f8] px-4 py-6 sm:py-10">
       <div className="mx-auto grid max-w-5xl gap-8 lg:grid-cols-[1fr_420px] lg:items-center">
         <section className="hidden lg:block">
           <Link href="/" className="inline-flex items-center gap-3">
@@ -96,7 +96,7 @@ export default function SignupPage() {
           </p>
         </section>
 
-        <section className="rounded-lg border border-slate-200 bg-white p-6">
+        <section className="rounded-lg border border-slate-200 bg-white p-5 sm:p-6">
           <div className="mb-6">
             <Link href="/" className="mb-6 inline-flex items-center gap-2 lg:hidden">
               <span className="grid h-8 w-8 place-items-center rounded-md bg-slate-900 text-xs font-black text-white">T</span>
