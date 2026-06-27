@@ -33,28 +33,28 @@ export default async function QuizPage({
   let problems = null;
 
   if (mode === "review" && user) {
-    const { data: answers } = await supabase
-      .from("user_answers")
-      .select("problem_id, is_correct, answered_at, problems(*)")
+    const { data: latestWrongAnswers } = await supabase
+      .from("latest_user_problem_answers")
+      .select("problem_id")
       .eq("user_id", user.id)
-      .order("answered_at", { ascending: false });
+      .eq("subject_id", subject.id)
+      .eq("grade", grade)
+      .eq("is_correct", false)
+      .limit(50);
 
-    const latestByProblem = new Map<string, { is_correct: boolean; problem: unknown }>();
+    const problemIds = (latestWrongAnswers ?? [])
+      .map((answer) => answer.problem_id)
+      .filter(Boolean);
 
-    answers?.forEach((answer) => {
-      if (latestByProblem.has(answer.problem_id)) return;
-      latestByProblem.set(answer.problem_id, {
-        is_correct: answer.is_correct,
-        problem: answer.problems,
-      });
-    });
-
-    problems = [...latestByProblem.values()]
-      .filter(({ is_correct, problem }) => {
-        const p = problem as { subject_id?: string; grade?: number } | null;
-        return !is_correct && p?.subject_id === subject.id && p?.grade === grade;
-      })
-      .map(({ problem }) => problem);
+    if (problemIds.length > 0) {
+      const { data } = await supabase
+        .from("problems")
+        .select("*")
+        .in("id", problemIds);
+      problems = data;
+    } else {
+      problems = [];
+    }
   } else {
     // 指定学年の問題をランダムに10問取得
     const { data } = await supabase

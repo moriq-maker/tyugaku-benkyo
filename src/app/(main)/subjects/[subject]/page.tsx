@@ -31,17 +31,29 @@ export default async function SubjectPage({
 
   if (!subject) notFound();
 
-  const { data: problems } = await supabase
-    .from("problems")
-    .select("id, grade, difficulty, category")
-    .eq("subject_id", subject.id);
+  const [{ data: problemStats }, { data: categoryRows }] = await Promise.all([
+    supabase
+      .from("problem_grade_stats")
+      .select("grade, total")
+      .eq("subject_id", subject.id),
+    supabase
+      .from("problems")
+      .select("grade, category")
+      .eq("subject_id", subject.id)
+      .limit(80),
+  ]);
 
   const gradeGroups = [1, 2, 3].map((grade) => {
-    const gradeProblems = problems?.filter((problem) => problem.grade === grade) ?? [];
-    const categories = [...new Set(gradeProblems.map((problem) => problem.category))].slice(0, 5);
+    const count = ((problemStats ?? []) as { grade: number; total: number }[])
+      .find((item) => item.grade === grade)?.total ?? 0;
+    const categories = [...new Set(
+      ((categoryRows ?? []) as { grade: number; category: string }[])
+        .filter((problem) => problem.grade === grade)
+        .map((problem) => problem.category)
+    )].slice(0, 5);
     return {
       grade,
-      count: gradeProblems.length,
+      count,
       categories,
     };
   });
@@ -49,25 +61,16 @@ export default async function SubjectPage({
   let wrongCountsByGrade: Record<number, number> = {};
   if (user) {
     const { data: answers } = await supabase
-      .from("user_answers")
-      .select("problem_id, is_correct, answered_at, problems(subject_id, grade)")
+      .from("latest_user_problem_answers")
+      .select("grade")
       .eq("user_id", user.id)
-      .order("answered_at", { ascending: false });
+      .eq("subject_id", subject.id)
+      .eq("is_correct", false);
 
-    const latestByProblem = new Map<string, { is_correct: boolean; grade: number }>();
-
-    answers?.forEach((answer) => {
-      if (latestByProblem.has(answer.problem_id)) return;
-      const problem = answer.problems as unknown as { subject_id: string; grade: number } | null;
-      if (!problem || problem.subject_id !== subject.id) return;
-      latestByProblem.set(answer.problem_id, {
-        is_correct: answer.is_correct,
-        grade: problem.grade,
-      });
-    });
-
-    wrongCountsByGrade = [...latestByProblem.values()].reduce<Record<number, number>>((acc, item) => {
-      if (!item.is_correct) acc[item.grade] = (acc[item.grade] ?? 0) + 1;
+    wrongCountsByGrade = ((answers ?? []) as { grade: number }[]).reduce<Record<number, number>>((acc, item) => {
+      if (item.grade) {
+        acc[item.grade] = (acc[item.grade] ?? 0) + 1;
+      }
       return acc;
     }, {});
   }

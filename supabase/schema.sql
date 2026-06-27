@@ -41,6 +41,39 @@ create table if not exists user_answers (
 
 create index if not exists user_answers_user_id_idx on user_answers(user_id);
 create index if not exists user_answers_problem_id_idx on user_answers(problem_id);
+create index if not exists user_answers_user_answered_idx on user_answers(user_id, answered_at desc);
+create index if not exists user_answers_user_problem_answered_idx on user_answers(user_id, problem_id, answered_at desc);
+
+-- 画面表示用の軽量ビュー
+create or replace view user_answer_subject_stats as
+select
+  ua.user_id,
+  p.subject_id,
+  count(*)::int as total,
+  count(*) filter (where ua.is_correct)::int as correct
+from user_answers ua
+join problems p on p.id = ua.problem_id
+group by ua.user_id, p.subject_id;
+
+create or replace view latest_user_problem_answers as
+select distinct on (ua.user_id, ua.problem_id)
+  ua.user_id,
+  ua.problem_id,
+  ua.is_correct,
+  ua.answered_at,
+  p.subject_id,
+  p.grade
+from user_answers ua
+join problems p on p.id = ua.problem_id
+order by ua.user_id, ua.problem_id, ua.answered_at desc;
+
+create or replace view problem_grade_stats as
+select
+  subject_id,
+  grade,
+  count(*)::int as total
+from problems
+group by subject_id, grade;
 
 -- Row Level Security の設定
 alter table subjects enable row level security;
@@ -52,6 +85,9 @@ grant usage on schema public to anon, authenticated;
 grant select on subjects to anon, authenticated;
 grant select on problems to anon, authenticated;
 grant select, insert, delete on user_answers to authenticated;
+grant select on user_answer_subject_stats to authenticated;
+grant select on latest_user_problem_answers to authenticated;
+grant select on problem_grade_stats to anon, authenticated;
 
 -- 科目と問題は全員が参照可能
 drop policy if exists "誰でも科目を参照可能" on subjects;

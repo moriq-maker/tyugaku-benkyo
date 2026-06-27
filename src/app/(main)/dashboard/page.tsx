@@ -11,10 +11,13 @@ const SUBJECT_STYLES: Record<string, { accent: string; bg: string }> = {
 };
 
 type AnswerRow = {
+  subject_id: string;
+  total: number;
+  correct: number;
+};
+
+type LatestAnswerRow = {
   is_correct: boolean;
-  problem_id?: string;
-  answered_at?: string;
-  problems: { subject_id: string } | null;
 };
 
 export default async function DashboardPage() {
@@ -29,20 +32,24 @@ export default async function DashboardPage() {
   let wrongTotal = 0;
 
   if (subjects && user) {
-    const { data: answers } = await supabase
-      .from("user_answers")
-      .select("problem_id, is_correct, answered_at, problems(subject_id)")
-      .eq("user_id", user.id)
-      .order("answered_at", { ascending: false });
+    const [{ data: subjectStats }, { data: latestAnswers }] = await Promise.all([
+      supabase
+        .from("user_answer_subject_stats")
+        .select("subject_id, total, correct")
+        .eq("user_id", user.id),
+      supabase
+        .from("latest_user_problem_answers")
+        .select("is_correct")
+        .eq("user_id", user.id)
+        .eq("is_correct", false),
+    ]);
 
-    const answerRows = (answers ?? []) as unknown as AnswerRow[];
+    const statRows = (subjectStats ?? []) as AnswerRow[];
 
     stats = subjects.map((subject) => {
-      const subjectAnswers = answerRows.filter(
-        (answer) => answer.problems?.subject_id === subject.id
-      );
-      const total = subjectAnswers.length;
-      const correct = subjectAnswers.filter((answer) => answer.is_correct).length;
+      const subjectRow = statRows.find((row) => row.subject_id === subject.id);
+      const total = subjectRow?.total ?? 0;
+      const correct = subjectRow?.correct ?? 0;
       return {
         subject_id: subject.id,
         subject_name: subject.name,
@@ -52,12 +59,7 @@ export default async function DashboardPage() {
       };
     });
 
-    const latestByProblem = new Map<string, { is_correct: boolean }>();
-    answerRows.forEach((answer) => {
-      if (!answer.problem_id || latestByProblem.has(answer.problem_id)) return;
-      latestByProblem.set(answer.problem_id, { is_correct: answer.is_correct });
-    });
-    wrongTotal = [...latestByProblem.values()].filter((answer) => !answer.is_correct).length;
+    wrongTotal = ((latestAnswers ?? []) as LatestAnswerRow[]).length;
   }
 
   const totalAnswered = stats.reduce((sum, item) => sum + item.total, 0);
