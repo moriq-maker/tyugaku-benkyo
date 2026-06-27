@@ -75,6 +75,25 @@ select
 from problems
 group by subject_id, grade;
 
+create or replace function get_random_problems(
+  p_subject_id uuid,
+  p_grade int,
+  p_limit int default 10
+)
+returns setof problems
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select *
+  from problems
+  where subject_id = p_subject_id
+    and grade = p_grade
+  order by random()
+  limit p_limit;
+$$;
+
 -- Row Level Security の設定
 alter table subjects enable row level security;
 alter table problems enable row level security;
@@ -88,6 +107,7 @@ grant select, insert, delete on user_answers to authenticated;
 grant select on user_answer_subject_stats to authenticated;
 grant select on latest_user_problem_answers to authenticated;
 grant select on problem_grade_stats to anon, authenticated;
+grant execute on function get_random_problems(uuid, int, int) to anon, authenticated;
 
 -- 科目と問題は全員が参照可能
 drop policy if exists "誰でも科目を参照可能" on subjects;

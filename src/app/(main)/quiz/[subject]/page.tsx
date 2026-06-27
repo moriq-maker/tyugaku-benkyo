@@ -2,10 +2,6 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import QuizClient from "./QuizClient";
 
-function shuffleProblems<T>(items: T[]): T[] {
-  return [...items].sort(() => Math.random() - 0.5);
-}
-
 export default async function QuizPage({
   params,
   searchParams,
@@ -56,24 +52,23 @@ export default async function QuizPage({
       problems = [];
     }
   } else {
-    // 指定学年の問題をランダムに10問取得
-    const { data } = await supabase
-      .from("problems")
-      .select("*")
-      .eq("subject_id", subject.id)
-      .eq("grade", grade);
+    // 指定学年の問題をSupabase側でランダムに10問だけ取得
+    const { data } = await supabase.rpc("get_random_problems", {
+      p_subject_id: subject.id,
+      p_grade: grade,
+      p_limit: 10,
+    });
     problems = data;
   }
 
   if (!problems || problems.length === 0) notFound();
 
-  // 問題をシャッフル（最大10問）
-  const shuffled = shuffleProblems(problems).slice(0, 10);
+  const selectedProblems = mode === "review" ? problems.slice(0, 10) : problems;
 
   return (
     <QuizClient
       subject={subject}
-      problems={shuffled}
+      problems={selectedProblems}
       grade={grade}
       mode={mode}
     />
