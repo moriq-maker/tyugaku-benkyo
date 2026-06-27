@@ -44,8 +44,21 @@ create index if not exists user_answers_problem_id_idx on user_answers(problem_i
 create index if not exists user_answers_user_answered_idx on user_answers(user_id, answered_at desc);
 create index if not exists user_answers_user_problem_answered_idx on user_answers(user_id, problem_id, answered_at desc);
 
+-- ブックマークテーブル
+create table if not exists user_bookmarks (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete cascade not null,
+  problem_id uuid references problems(id) on delete cascade not null,
+  created_at timestamptz default now(),
+  unique(user_id, problem_id)
+);
+
+create index if not exists user_bookmarks_user_id_idx on user_bookmarks(user_id);
+create index if not exists user_bookmarks_problem_id_idx on user_bookmarks(problem_id);
+
 -- 画面表示用の軽量ビュー
-create or replace view user_answer_subject_stats as
+create or replace view user_answer_subject_stats
+with (security_invoker = true) as
 select
   ua.user_id,
   p.subject_id,
@@ -55,7 +68,8 @@ from user_answers ua
 join problems p on p.id = ua.problem_id
 group by ua.user_id, p.subject_id;
 
-create or replace view latest_user_problem_answers as
+create or replace view latest_user_problem_answers
+with (security_invoker = true) as
 select distinct on (ua.user_id, ua.problem_id)
   ua.user_id,
   ua.problem_id,
@@ -74,6 +88,46 @@ select
   count(*)::int as total
 from problems
 group by subject_id, grade;
+
+create or replace view user_answer_category_stats
+with (security_invoker = true) as
+select
+  ua.user_id,
+  p.subject_id,
+  p.grade,
+  p.category,
+  count(*)::int as total,
+  count(*) filter (where ua.is_correct)::int as correct
+from user_answers ua
+join problems p on p.id = ua.problem_id
+group by ua.user_id, p.subject_id, p.grade, p.category;
+
+create or replace view user_answer_daily_stats
+with (security_invoker = true) as
+select
+  ua.user_id,
+  (ua.answered_at at time zone 'Asia/Tokyo')::date as answered_date,
+  count(*)::int as total,
+  count(*) filter (where ua.is_correct)::int as correct
+from user_answers ua
+group by ua.user_id, (ua.answered_at at time zone 'Asia/Tokyo')::date;
+
+create or replace view user_problem_review_priority
+with (security_invoker = true) as
+select
+  ua.user_id,
+  ua.problem_id,
+  p.subject_id,
+  p.grade,
+  p.category,
+  count(*) filter (where not ua.is_correct)::int as wrong_count,
+  max(ua.answered_at) filter (where not ua.is_correct) as latest_wrong_at,
+  max(ua.answered_at) as latest_answered_at
+from user_answers ua
+join problems p on p.id = ua.problem_id
+group by ua.user_id, ua.problem_id, p.subject_id, p.grade, p.category
+having count(*) filter (where not ua.is_correct) > 0
+  and (array_agg(ua.is_correct order by ua.answered_at desc))[1] = false;
 
 create or replace function get_random_problems(
   p_subject_id uuid,
@@ -98,15 +152,20 @@ $$;
 alter table subjects enable row level security;
 alter table problems enable row level security;
 alter table user_answers enable row level security;
+alter table user_bookmarks enable row level security;
 
 -- Supabase API から参照・保存できるようにする権限
 grant usage on schema public to anon, authenticated;
 grant select on subjects to anon, authenticated;
 grant select on problems to anon, authenticated;
 grant select, insert, delete on user_answers to authenticated;
+grant select, insert, delete on user_bookmarks to authenticated;
 grant select on user_answer_subject_stats to authenticated;
 grant select on latest_user_problem_answers to authenticated;
 grant select on problem_grade_stats to anon, authenticated;
+grant select on user_answer_category_stats to authenticated;
+grant select on user_answer_daily_stats to authenticated;
+grant select on user_problem_review_priority to authenticated;
 grant execute on function get_random_problems(uuid, int, int) to anon, authenticated;
 
 -- 科目と問題は全員が参照可能
@@ -125,3 +184,13 @@ create policy "自分の回答履歴のみ追加" on user_answers for insert wit
 
 drop policy if exists "自分の回答履歴のみ削除" on user_answers;
 create policy "自分の回答履歴のみ削除" on user_answers for delete using (auth.uid() = user_id);
+
+-- ブックマークは自分のものだけ操作可能
+drop policy if exists "自分のブックマークのみ参照" on user_bookmarks;
+create policy "自分のブックマークのみ参照" on user_bookmarks for select using (auth.uid() = user_id);
+
+drop policy if exists "自分のブックマークのみ追加" on user_bookmarks;
+create policy "自分のブックマークのみ追加" on user_bookmarks for insert with check (auth.uid() = user_id);
+
+drop policy if exists "自分のブックマークのみ削除" on user_bookmarks;
+create policy "自分のブックマークのみ削除" on user_bookmarks for delete using (auth.uid() = user_id);

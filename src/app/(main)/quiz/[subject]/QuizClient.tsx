@@ -22,11 +22,13 @@ export default function QuizClient({
   problems,
   grade,
   mode,
+  initialBookmarkedProblemIds,
 }: {
   subject: Subject;
   problems: Problem[];
   grade: number;
-  mode: "normal" | "review";
+  mode: "normal" | "review" | "bookmarked";
+  initialBookmarkedProblemIds: string[];
 }) {
   const router = useRouter();
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -34,6 +36,10 @@ export default function QuizClient({
   const [showAnswer, setShowAnswer] = useState(false);
   const [results, setResults] = useState<QuizResult[]>([]);
   const [saving, setSaving] = useState(false);
+  const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(
+    () => new Set(initialBookmarkedProblemIds)
+  );
+  const [bookmarkSaving, setBookmarkSaving] = useState(false);
 
   const current = problems[currentIndex];
   const isLastQuestion = currentIndex === problems.length - 1;
@@ -54,6 +60,47 @@ export default function QuizClient({
     setSelected(choice);
     setShowAnswer(true);
   }, [showAnswer]);
+
+  const handleToggleBookmark = useCallback(async () => {
+    if (bookmarkSaving) return;
+
+    const nextBookmarked = !bookmarkedIds.has(current.id);
+    setBookmarkedIds((ids) => {
+      const next = new Set(ids);
+      if (nextBookmarked) next.add(current.id);
+      else next.delete(current.id);
+      return next;
+    });
+    setBookmarkSaving(true);
+
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      if (nextBookmarked) {
+        await supabase
+          .from("user_bookmarks")
+          .upsert({ user_id: user.id, problem_id: current.id }, { onConflict: "user_id,problem_id" });
+      } else {
+        await supabase
+          .from("user_bookmarks")
+          .delete()
+          .eq("user_id", user.id)
+          .eq("problem_id", current.id);
+      }
+    } catch (e) {
+      console.error("ブックマークの保存に失敗しました:", e);
+      setBookmarkedIds((ids) => {
+        const next = new Set(ids);
+        if (nextBookmarked) next.delete(current.id);
+        else next.add(current.id);
+        return next;
+      });
+    } finally {
+      setBookmarkSaving(false);
+    }
+  }, [bookmarkSaving, bookmarkedIds, current.id]);
 
   const handleNext = useCallback(async () => {
     if (!selected) return;
@@ -113,7 +160,7 @@ export default function QuizClient({
           <span className="truncate">← {subject.name}</span>
         </Link>
         <span className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600">
-          {mode === "review" ? "解き直し" : "通常演習"}
+          {mode === "review" ? "優先復習" : mode === "bookmarked" ? "ブックマーク" : "通常演習"}
         </span>
       </div>
 
@@ -139,6 +186,18 @@ export default function QuizClient({
               {current.category}
             </span>
             <Difficulty level={current.difficulty} />
+            <button
+              type="button"
+              onClick={handleToggleBookmark}
+              disabled={bookmarkSaving}
+              className={`ml-auto rounded-md border px-3 py-1 text-xs font-bold transition disabled:opacity-60 ${
+                bookmarkedIds.has(current.id)
+                  ? "border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
+                  : "border-slate-200 bg-white text-slate-600 hover:border-slate-400"
+              }`}
+            >
+              {bookmarkedIds.has(current.id) ? "保存済み" : "保存"}
+            </button>
           </div>
           {current.passage && (
             <div className="mb-4 rounded-md border border-slate-200 bg-slate-50 p-4 text-sm leading-7 text-slate-700">

@@ -59,13 +59,33 @@ export default async function SubjectPage({
   });
 
   let wrongCountsByGrade: Record<number, number> = {};
+  let bookmarkCountsByGrade: Record<number, number> = {};
+  let weakCategories: {
+    grade: number;
+    category: string;
+    total: number;
+    correct: number;
+    rate: number;
+  }[] = [];
+
   if (user) {
-    const { data: answers } = await supabase
-      .from("latest_user_problem_answers")
-      .select("grade")
-      .eq("user_id", user.id)
-      .eq("subject_id", subject.id)
-      .eq("is_correct", false);
+    const [{ data: answers }, { data: categoryStats }, { data: bookmarks }] = await Promise.all([
+      supabase
+        .from("user_problem_review_priority")
+        .select("grade")
+        .eq("user_id", user.id)
+        .eq("subject_id", subject.id),
+      supabase
+        .from("user_answer_category_stats")
+        .select("grade, category, total, correct")
+        .eq("user_id", user.id)
+        .eq("subject_id", subject.id)
+        .order("correct", { ascending: true }),
+      supabase
+        .from("user_bookmarks")
+        .select("problem_id")
+        .eq("user_id", user.id),
+    ]);
 
     wrongCountsByGrade = ((answers ?? []) as { grade: number }[]).reduce<Record<number, number>>((acc, item) => {
       if (item.grade) {
@@ -73,6 +93,35 @@ export default async function SubjectPage({
       }
       return acc;
     }, {});
+
+    const bookmarkProblemIds = ((bookmarks ?? []) as { problem_id: string }[])
+      .map((bookmark) => bookmark.problem_id)
+      .filter(Boolean);
+
+    if (bookmarkProblemIds.length > 0) {
+      const { data: bookmarkProblems } = await supabase
+        .from("problems")
+        .select("grade")
+        .in("id", bookmarkProblemIds)
+        .eq("subject_id", subject.id);
+
+      bookmarkCountsByGrade = ((bookmarkProblems ?? []) as { grade: number }[])
+        .reduce<Record<number, number>>((acc, item) => {
+          if (item.grade) {
+            acc[item.grade] = (acc[item.grade] ?? 0) + 1;
+          }
+          return acc;
+        }, {});
+    }
+
+    weakCategories = ((categoryStats ?? []) as { grade: number; category: string; total: number; correct: number }[])
+      .filter((item) => item.total > 0)
+      .map((item) => ({
+        ...item,
+        rate: Math.round((item.correct / item.total) * 100),
+      }))
+      .sort((a, b) => a.rate - b.rate || b.total - a.total)
+      .slice(0, 5);
   }
 
   return (
@@ -145,7 +194,15 @@ export default async function SubjectPage({
                       href={`/quiz/${subjectEn}?grade=${grade}&review=wrong`}
                       className="rounded-md bg-red-600 px-4 py-2.5 text-center text-sm font-bold text-white transition hover:bg-red-700"
                     >
-                      解き直し {wrongCount}問
+                      優先復習 {wrongCount}問
+                    </Link>
+                  )}
+                  {(bookmarkCountsByGrade[grade] ?? 0) > 0 && (
+                    <Link
+                      href={`/quiz/${subjectEn}?grade=${grade}&review=bookmarked`}
+                      className="rounded-md border border-amber-300 bg-amber-50 px-4 py-2.5 text-center text-sm font-bold text-amber-800 transition hover:bg-amber-100"
+                    >
+                      保存問題 {bookmarkCountsByGrade[grade]}問
                     </Link>
                   )}
                   {enabled && (
@@ -162,6 +219,38 @@ export default async function SubjectPage({
           );
         })}
       </section>
+
+      {weakCategories.length > 0 && (
+        <section className="rounded-lg border border-slate-200 bg-white p-5">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h3 className="text-sm font-bold text-slate-950">弱点カテゴリ</h3>
+              <p className="mt-1 text-sm text-slate-500">正答率が低い順に表示しています。</p>
+            </div>
+          </div>
+          <div className="mt-4 space-y-3">
+            {weakCategories.map((item) => (
+              <div key={`${item.grade}-${item.category}`} className="rounded-md border border-slate-200 bg-slate-50 p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-bold text-slate-900">{item.category}</p>
+                    <p className="mt-1 text-xs font-semibold text-slate-500">
+                      {GRADE_LABELS[item.grade]} / {item.correct}/{item.total}問 正解
+                    </p>
+                  </div>
+                  <span className="text-sm font-bold text-slate-900">{item.rate}%</span>
+                </div>
+                <div className="mt-3 h-2 rounded-full bg-white">
+                  <div
+                    className={`h-2 rounded-full ${item.rate < 60 ? "bg-red-500" : "bg-amber-500"}`}
+                    style={{ width: `${item.rate}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="rounded-lg border border-slate-200 bg-white p-5">
         <h3 className="text-sm font-bold text-slate-950">難易度</h3>

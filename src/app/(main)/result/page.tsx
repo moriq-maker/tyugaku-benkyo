@@ -9,7 +9,7 @@ type StoredData = {
   results: QuizResult[];
   subject: Subject;
   grade: number;
-  mode?: "normal" | "review";
+  mode?: "normal" | "review" | "bookmarked";
 };
 
 const GRADE_LABELS: Record<number, string> = {
@@ -71,7 +71,8 @@ export default function ResultPage() {
           </div>
           <div>
             <p className="text-sm font-semibold text-slate-500">
-              {subject.name} / {GRADE_LABELS[grade]}{mode === "review" ? " / 解き直し" : ""}
+              {subject.name} / {GRADE_LABELS[grade]}
+              {mode === "review" ? " / 優先復習" : mode === "bookmarked" ? " / 保存問題" : ""}
             </p>
             <h1 className="mt-2 text-2xl font-bold text-slate-950">結果</h1>
             <p className="mt-3 text-sm leading-6 text-slate-600">{getScoreMessage(rate)}</p>

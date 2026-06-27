@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import type { Problem } from "@/types";
 import QuizClient from "./QuizClient";
 
 export default async function QuizPage({
@@ -12,7 +13,7 @@ export default async function QuizPage({
   const { subject: subjectEn } = await params;
   const { grade: gradeParam, review } = await searchParams;
   const grade = Number(gradeParam ?? 1);
-  const mode = review === "wrong" ? "review" : "normal";
+  const mode = review === "wrong" ? "review" : review === "bookmarked" ? "bookmarked" : "normal";
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -26,20 +27,21 @@ export default async function QuizPage({
 
   if (!subject) notFound();
 
-  let problems = null;
+  let problems: Problem[] | null = null;
 
   if (mode === "review" && user) {
-    const { data: latestWrongAnswers } = await supabase
-      .from("latest_user_problem_answers")
+    const { data: priorityRows } = await supabase
+      .from("user_problem_review_priority")
       .select("problem_id")
       .eq("user_id", user.id)
       .eq("subject_id", subject.id)
       .eq("grade", grade)
-      .eq("is_correct", false)
-      .limit(50);
+      .order("wrong_count", { ascending: false })
+      .order("latest_wrong_at", { ascending: false })
+      .limit(10);
 
-    const problemIds = (latestWrongAnswers ?? [])
-      .map((answer) => answer.problem_id)
+    const problemIds = (priorityRows ?? [])
+      .map((row) => row.problem_id)
       .filter(Boolean);
 
     if (problemIds.length > 0) {
@@ -47,6 +49,30 @@ export default async function QuizPage({
         .from("problems")
         .select("*")
         .in("id", problemIds);
+      const problemById = new Map((data ?? []).map((problem) => [problem.id, problem]));
+      problems = problemIds.map((id) => problemById.get(id)).filter(Boolean);
+    } else {
+      problems = [];
+    }
+  } else if (mode === "bookmarked" && user) {
+    const { data: bookmarkRows } = await supabase
+      .from("user_bookmarks")
+      .select("problem_id")
+      .eq("user_id", user.id)
+      .limit(50);
+
+    const bookmarkedIds = (bookmarkRows ?? [])
+      .map((row) => row.problem_id)
+      .filter(Boolean);
+
+    if (bookmarkedIds.length > 0) {
+      const { data } = await supabase
+        .from("problems")
+        .select("*")
+        .in("id", bookmarkedIds)
+        .eq("subject_id", subject.id)
+        .eq("grade", grade)
+        .limit(10);
       problems = data;
     } else {
       problems = [];
@@ -63,7 +89,20 @@ export default async function QuizPage({
 
   if (!problems || problems.length === 0) notFound();
 
-  const selectedProblems = mode === "review" ? problems.slice(0, 10) : problems;
+  const problemIds = problems.map((problem) => problem.id);
+  const { data: bookmarkRows } = user && problemIds.length > 0
+    ? await supabase
+        .from("user_bookmarks")
+        .select("problem_id")
+        .eq("user_id", user.id)
+        .in("problem_id", problemIds)
+    : { data: [] };
+
+  const bookmarkedProblemIds = ((bookmarkRows ?? []) as { problem_id: string }[])
+    .map((bookmark) => bookmark.problem_id)
+      .filter(Boolean);
+
+  const selectedProblems = problems.slice(0, 10);
 
   return (
     <QuizClient
@@ -71,6 +110,7 @@ export default async function QuizPage({
       problems={selectedProblems}
       grade={grade}
       mode={mode}
+      initialBookmarkedProblemIds={bookmarkedProblemIds}
     />
   );
 }
