@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import type { Subject } from "@/types";
 
 const GRADE_LABELS: Record<number, string> = {
   1: "中学1年生",
@@ -14,6 +15,28 @@ const DIFFICULTY_LABELS = [
   ["応用", "少し考える確認問題"],
 ];
 
+type GradeSummary = {
+  grade: number;
+  count: number;
+  categories: string[];
+  wrong_count: number;
+  bookmark_count: number;
+};
+
+type WeakCategory = {
+  grade: number;
+  category: string;
+  total: number;
+  correct: number;
+  rate: number;
+};
+
+type SubjectSummary = {
+  subject: Subject;
+  grades: GradeSummary[];
+  weak_categories: WeakCategory[];
+};
+
 export default async function SubjectPage({
   params,
 }: {
@@ -21,108 +44,16 @@ export default async function SubjectPage({
 }) {
   const { subject: subjectEn } = await params;
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  const { data: subject } = await supabase
-    .from("subjects")
-    .select("*")
-    .eq("name_en", subjectEn)
-    .single();
-
-  if (!subject) notFound();
-
-  const [{ data: problemStats }, { data: categoryRows }] = await Promise.all([
-    supabase
-      .from("problem_grade_stats")
-      .select("grade, total")
-      .eq("subject_id", subject.id),
-    supabase
-      .from("problems")
-      .select("grade, category")
-      .eq("subject_id", subject.id)
-      .limit(80),
-  ]);
-
-  const gradeGroups = [1, 2, 3].map((grade) => {
-    const count = ((problemStats ?? []) as { grade: number; total: number }[])
-      .find((item) => item.grade === grade)?.total ?? 0;
-    const categories = [...new Set(
-      ((categoryRows ?? []) as { grade: number; category: string }[])
-        .filter((problem) => problem.grade === grade)
-        .map((problem) => problem.category)
-    )].slice(0, 5);
-    return {
-      grade,
-      count,
-      categories,
-    };
+  const { data: summaryData } = await supabase.rpc("get_subject_summary", {
+    p_subject_en: subjectEn,
   });
+  const summary = summaryData as SubjectSummary | null;
 
-  let wrongCountsByGrade: Record<number, number> = {};
-  let bookmarkCountsByGrade: Record<number, number> = {};
-  let weakCategories: {
-    grade: number;
-    category: string;
-    total: number;
-    correct: number;
-    rate: number;
-  }[] = [];
+  if (!summary?.subject) notFound();
 
-  if (user) {
-    const [{ data: answers }, { data: categoryStats }, { data: bookmarks }] = await Promise.all([
-      supabase
-        .from("user_problem_review_priority")
-        .select("grade")
-        .eq("user_id", user.id)
-        .eq("subject_id", subject.id),
-      supabase
-        .from("user_answer_category_stats")
-        .select("grade, category, total, correct")
-        .eq("user_id", user.id)
-        .eq("subject_id", subject.id)
-        .order("correct", { ascending: true }),
-      supabase
-        .from("user_bookmarks")
-        .select("problem_id")
-        .eq("user_id", user.id),
-    ]);
-
-    wrongCountsByGrade = ((answers ?? []) as { grade: number }[]).reduce<Record<number, number>>((acc, item) => {
-      if (item.grade) {
-        acc[item.grade] = (acc[item.grade] ?? 0) + 1;
-      }
-      return acc;
-    }, {});
-
-    const bookmarkProblemIds = ((bookmarks ?? []) as { problem_id: string }[])
-      .map((bookmark) => bookmark.problem_id)
-      .filter(Boolean);
-
-    if (bookmarkProblemIds.length > 0) {
-      const { data: bookmarkProblems } = await supabase
-        .from("problems")
-        .select("grade")
-        .in("id", bookmarkProblemIds)
-        .eq("subject_id", subject.id);
-
-      bookmarkCountsByGrade = ((bookmarkProblems ?? []) as { grade: number }[])
-        .reduce<Record<number, number>>((acc, item) => {
-          if (item.grade) {
-            acc[item.grade] = (acc[item.grade] ?? 0) + 1;
-          }
-          return acc;
-        }, {});
-    }
-
-    weakCategories = ((categoryStats ?? []) as { grade: number; category: string; total: number; correct: number }[])
-      .filter((item) => item.total > 0)
-      .map((item) => ({
-        ...item,
-        rate: Math.round((item.correct / item.total) * 100),
-      }))
-      .sort((a, b) => a.rate - b.rate || b.total - a.total)
-      .slice(0, 5);
-  }
+  const subject = summary.subject;
+  const gradeGroups = summary.grades;
+  const weakCategories = summary.weak_categories;
 
   return (
     <div className="space-y-6">
@@ -158,8 +89,8 @@ export default async function SubjectPage({
       </section>
 
       <section className="grid gap-4">
-        {gradeGroups.map(({ grade, count, categories }) => {
-          const wrongCount = wrongCountsByGrade[grade] ?? 0;
+        {gradeGroups.map(({ grade, count, categories, wrong_count, bookmark_count }) => {
+          const wrongCount = wrong_count ?? 0;
           const enabled = count > 0;
 
           return (
@@ -197,12 +128,12 @@ export default async function SubjectPage({
                       優先復習 {wrongCount}問
                     </Link>
                   )}
-                  {(bookmarkCountsByGrade[grade] ?? 0) > 0 && (
+                  {bookmark_count > 0 && (
                     <Link
                       href={`/quiz/${subjectEn}?grade=${grade}&review=bookmarked`}
                       className="rounded-md border border-amber-300 bg-amber-50 px-4 py-2.5 text-center text-sm font-bold text-amber-800 transition hover:bg-amber-100"
                     >
-                      保存問題 {bookmarkCountsByGrade[grade]}問
+                      保存問題 {bookmark_count}問
                     </Link>
                   )}
                   {enabled && (

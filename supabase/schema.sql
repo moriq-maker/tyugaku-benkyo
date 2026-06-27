@@ -148,6 +148,194 @@ as $$
   limit p_limit;
 $$;
 
+create or replace function get_dashboard_summary()
+returns jsonb
+language sql
+stable
+security invoker
+set search_path = public
+as $$
+  with subject_rows as (
+    select
+      s.id,
+      s.name,
+      s.name_en,
+      s.icon,
+      s.color,
+      coalesce(stats.total, 0) as total,
+      coalesce(stats.correct, 0) as correct
+    from subjects s
+    left join user_answer_subject_stats stats
+      on stats.subject_id = s.id
+      and stats.user_id = auth.uid()
+  ),
+  latest_wrong as (
+    select count(*)::int as total
+    from latest_user_problem_answers
+    where user_id = auth.uid()
+      and is_correct = false
+  ),
+  bookmark_total as (
+    select count(*)::int as total
+    from user_bookmarks
+    where user_id = auth.uid()
+  ),
+  daily_rows as (
+    select answered_date, total, correct
+    from user_answer_daily_stats
+    where user_id = auth.uid()
+    order by answered_date desc
+    limit 7
+  ),
+  category_rows as (
+    select
+      category,
+      sum(total)::int as total,
+      sum(correct)::int as correct
+    from user_answer_category_stats
+    where user_id = auth.uid()
+    group by category
+  ),
+  weakest as (
+    select
+      category,
+      total,
+      correct,
+      round((correct::numeric / nullif(total, 0)) * 100)::int as rate
+    from category_rows
+    where total > 0
+    order by rate asc, total desc
+    limit 1
+  )
+  select jsonb_build_object(
+    'subjects',
+      coalesce((
+        select jsonb_agg(
+          jsonb_build_object(
+            'id', id,
+            'name', name,
+            'name_en', name_en,
+            'icon', icon,
+            'color', color,
+            'total', total,
+            'correct', correct,
+            'rate', case when total > 0 then round((correct::numeric / total) * 100)::int else 0 end
+          )
+          order by name_en
+        )
+        from subject_rows
+      ), '[]'::jsonb),
+    'wrong_total', (select total from latest_wrong),
+    'bookmark_total', (select total from bookmark_total),
+    'daily_stats',
+      coalesce((
+        select jsonb_agg(
+          jsonb_build_object(
+            'answered_date', answered_date,
+            'total', total,
+            'correct', correct
+          )
+          order by answered_date
+        )
+        from daily_rows
+      ), '[]'::jsonb),
+    'weakest_category', (select to_jsonb(weakest) from weakest)
+  );
+$$;
+
+create or replace function get_subject_summary(p_subject_en text)
+returns jsonb
+language sql
+stable
+security invoker
+set search_path = public
+as $$
+  with selected_subject as (
+    select *
+    from subjects
+    where name_en = p_subject_en
+    limit 1
+  ),
+  grade_list as (
+    select generate_series(1, 3) as grade
+  ),
+  grade_rows as (
+    select
+      gl.grade,
+      coalesce(pgs.total, 0) as count,
+      coalesce((
+        select jsonb_agg(category order by category)
+        from (
+          select distinct p.category
+          from problems p
+          join selected_subject ss on ss.id = p.subject_id
+          where p.grade = gl.grade
+          order by p.category
+          limit 5
+        ) categories
+      ), '[]'::jsonb) as categories,
+      coalesce((
+        select count(*)::int
+        from user_problem_review_priority priority
+        join selected_subject ss on ss.id = priority.subject_id
+        where priority.user_id = auth.uid()
+          and priority.grade = gl.grade
+      ), 0) as wrong_count,
+      coalesce((
+        select count(*)::int
+        from user_bookmarks bookmark
+        join problems p on p.id = bookmark.problem_id
+        join selected_subject ss on ss.id = p.subject_id
+        where bookmark.user_id = auth.uid()
+          and p.grade = gl.grade
+      ), 0) as bookmark_count
+    from grade_list gl
+    left join selected_subject ss on true
+    left join problem_grade_stats pgs
+      on pgs.subject_id = ss.id
+      and pgs.grade = gl.grade
+  ),
+  weak_categories as (
+    select
+      grade,
+      category,
+      total,
+      correct,
+      round((correct::numeric / nullif(total, 0)) * 100)::int as rate
+    from user_answer_category_stats stats
+    join selected_subject ss on ss.id = stats.subject_id
+    where stats.user_id = auth.uid()
+      and total > 0
+    order by rate asc, total desc
+    limit 5
+  )
+  select case
+    when not exists (select 1 from selected_subject) then null
+    else jsonb_build_object(
+      'subject', (select to_jsonb(selected_subject) from selected_subject),
+      'grades',
+        coalesce((
+          select jsonb_agg(
+            jsonb_build_object(
+              'grade', grade,
+              'count', count,
+              'categories', categories,
+              'wrong_count', wrong_count,
+              'bookmark_count', bookmark_count
+            )
+            order by grade
+          )
+          from grade_rows
+        ), '[]'::jsonb),
+      'weak_categories',
+        coalesce((
+          select jsonb_agg(to_jsonb(weak_categories) order by rate asc, total desc)
+          from weak_categories
+        ), '[]'::jsonb)
+    )
+  end;
+$$;
+
 -- Row Level Security の設定
 alter table subjects enable row level security;
 alter table problems enable row level security;
@@ -167,6 +355,8 @@ grant select on user_answer_category_stats to authenticated;
 grant select on user_answer_daily_stats to authenticated;
 grant select on user_problem_review_priority to authenticated;
 grant execute on function get_random_problems(uuid, int, int) to anon, authenticated;
+grant execute on function get_dashboard_summary() to authenticated;
+grant execute on function get_subject_summary(text) to authenticated;
 
 -- 科目と問題は全員が参照可能
 drop policy if exists "誰でも科目を参照可能" on subjects;

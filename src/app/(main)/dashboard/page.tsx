@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import type { SubjectStats } from "@/types";
+import type { Subject } from "@/types";
 
 const SUBJECT_STYLES: Record<string, { accent: string; bg: string }> = {
   math: { accent: "text-indigo-700", bg: "bg-indigo-50" },
@@ -10,14 +10,26 @@ const SUBJECT_STYLES: Record<string, { accent: string; bg: string }> = {
   social: { accent: "text-violet-700", bg: "bg-violet-50" },
 };
 
-type AnswerRow = {
-  subject_id: string;
+type DashboardSubject = Subject & {
   total: number;
   correct: number;
+  rate: number;
 };
 
-type LatestAnswerRow = {
-  is_correct: boolean;
+type DashboardSummary = {
+  subjects: DashboardSubject[];
+  wrong_total: number;
+  bookmark_total: number;
+  daily_stats: DailyStatRow[];
+  weakest_category: (CategoryStatRow & { rate: number }) | null;
+};
+
+type SubjectStats = {
+  subject_id: string;
+  subject_name: string;
+  total: number;
+  correct: number;
+  rate: number;
 };
 
 type DailyStatRow = {
@@ -34,75 +46,21 @@ type CategoryStatRow = {
 
 export default async function DashboardPage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  const { data: subjects } = await supabase
-    .from("subjects")
-    .select("*")
-    .order("name_en");
+  const { data: summaryData } = await supabase.rpc("get_dashboard_summary");
+  const summary = summaryData as DashboardSummary | null;
+  const subjects = summary?.subjects ?? [];
 
-  let stats: SubjectStats[] = [];
-  let wrongTotal = 0;
-  let bookmarkTotal = 0;
-  let dailyStats: DailyStatRow[] = [];
-  let weakestCategory: (CategoryStatRow & { rate: number }) | null = null;
-
-  if (subjects && user) {
-    const [{ data: subjectStats }, { data: latestAnswers }, { data: bookmarks }, { data: dailyRows }, { data: categoryRows }] = await Promise.all([
-      supabase
-        .from("user_answer_subject_stats")
-        .select("subject_id, total, correct")
-        .eq("user_id", user.id),
-      supabase
-        .from("latest_user_problem_answers")
-        .select("is_correct")
-        .eq("user_id", user.id)
-        .eq("is_correct", false),
-      supabase
-        .from("user_bookmarks")
-        .select("id")
-        .eq("user_id", user.id),
-      supabase
-        .from("user_answer_daily_stats")
-        .select("answered_date, total, correct")
-        .eq("user_id", user.id)
-        .order("answered_date", { ascending: false })
-        .limit(7),
-      supabase
-        .from("user_answer_category_stats")
-        .select("category, total, correct")
-        .eq("user_id", user.id),
-    ]);
-
-    const statRows = (subjectStats ?? []) as AnswerRow[];
-
-    stats = subjects.map((subject) => {
-      const subjectRow = statRows.find((row) => row.subject_id === subject.id);
-      const total = subjectRow?.total ?? 0;
-      const correct = subjectRow?.correct ?? 0;
-      return {
-        subject_id: subject.id,
-        subject_name: subject.name,
-        total,
-        correct,
-        rate: total > 0 ? Math.round((correct / total) * 100) : 0,
-      };
-    });
-
-    wrongTotal = ((latestAnswers ?? []) as LatestAnswerRow[]).length;
-    bookmarkTotal = (bookmarks ?? []).length;
-    dailyStats = ((dailyRows ?? []) as DailyStatRow[]).reverse();
-
-    const mergedCategories = ((categoryRows ?? []) as CategoryStatRow[]).reduce<Record<string, CategoryStatRow>>((acc, item) => {
-      if (!acc[item.category]) acc[item.category] = { category: item.category, total: 0, correct: 0 };
-      acc[item.category].total += item.total;
-      acc[item.category].correct += item.correct;
-      return acc;
-    }, {});
-    weakestCategory = Object.values(mergedCategories)
-      .filter((item) => item.total > 0)
-      .map((item) => ({ ...item, rate: Math.round((item.correct / item.total) * 100) }))
-      .sort((a, b) => a.rate - b.rate || b.total - a.total)[0] ?? null;
-  }
+  const stats: SubjectStats[] = subjects.map((subject) => ({
+    subject_id: subject.id,
+    subject_name: subject.name,
+    total: subject.total,
+    correct: subject.correct,
+    rate: subject.rate,
+  }));
+  const wrongTotal = summary?.wrong_total ?? 0;
+  const bookmarkTotal = summary?.bookmark_total ?? 0;
+  const dailyStats = summary?.daily_stats ?? [];
+  const weakestCategory = summary?.weakest_category ?? null;
 
   const totalAnswered = stats.reduce((sum, item) => sum + item.total, 0);
   const totalCorrect = stats.reduce((sum, item) => sum + item.correct, 0);
@@ -218,13 +176,12 @@ export default async function DashboardPage() {
           </div>
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {subjects?.map((subject) => {
+          {subjects.map((subject) => {
             const style = SUBJECT_STYLES[subject.name_en] ?? {
               accent: "text-slate-700",
               bg: "bg-slate-50",
             };
-            const subjectStat = stats.find((item) => item.subject_id === subject.id);
-            const rate = subjectStat?.total ? subjectStat.rate : null;
+            const rate = subject.total ? subject.rate : null;
 
             return (
               <Link
