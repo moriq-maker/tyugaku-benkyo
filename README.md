@@ -1,105 +1,165 @@
-# テスタン 📚
+# テスタン
 
-全国の中学生向け **定期テスト対策Webアプリ**。
+中学1年生の1学期中間テスト対策に特化した、5科目対応の学習サポートWebアプリです。
 
-5科目（国語・数学・英語・理科・社会）の問題を学年別に解きながら、弱点を把握して効率的に学習できます。
+数学・英語・国語・理科・社会の4択問題を解きながら、正答率や間違えた問題を確認し、テスト前の復習を効率化します。
 
----
+公開URL: https://tyugaku-benkyo.vercel.app/
 
-## 機能概要
+## 現在の対応範囲
 
-- **科目別問題集** — 5科目 × 中学1〜3年の問題
-- **4択クイズ** — 即時フィードバックと解説表示
-- **学習記録** — 科目ごとの正答率を自動集計
-- **認証** — メール/パスワード・Googleログイン
+- 対象学年: 中学1年生
+- 対象時期: 1学期中間テスト範囲（4月から6月）
+- 対象科目: 国語・数学・英語・理科・社会
+- 問題形式: 4択問題
+- 出題数: 1回あたり最大10問
+- 問題データ: 各科目60問、合計300問
+
+今後、中1期末・中2・中3の範囲を追加できるように、DB上は `grade` や `exam_term` を持つ構成にしています。
+
+## 主な機能
+
+- メール/パスワードログイン
+- Googleログイン
+- 科目別ダッシュボード
+- 科目・学年別のクイズ
+- 即時フィードバックと解説表示
+- 結果画面での振り返り
+- 回答履歴の保存
+- 科目別・全体の正答率集計
+- 間違えた問題だけを解き直す復習モード
+- iPhone / iPad / PC 向けレスポンシブUI
 
 ## 技術スタック
 
 | カテゴリ | 技術 |
 |---|---|
-| フロントエンド | Next.js 16 (App Router) + TypeScript |
+| フロントエンド | Next.js 16 App Router + TypeScript |
 | スタイリング | Tailwind CSS |
-| バックエンド | Next.js API Routes |
-| 認証・DB | Supabase (Auth + PostgreSQL) |
+| 認証 | Supabase Auth |
+| データベース | Supabase PostgreSQL |
 | ホスティング | Vercel |
-
-## ドキュメント
-
-| ドキュメント | 内容 |
-|---|---|
-| [仕様書](docs/仕様書.md) | 機能要件・画面設計・DBスキーマ |
 
 ## セットアップ
 
-### 1. 環境変数の設定
-
-`.env.local.example` をコピーして `.env.local` を作成：
-
-```bash
-cp .env.local.example .env.local
-```
-
-`.env.local` を編集：
-
-```env
-NEXT_PUBLIC_SUPABASE_URL=（SupabaseプロジェクトURL）
-NEXT_PUBLIC_SUPABASE_ANON_KEY=（Supabase anonキー）
-```
-
-### 2. Supabase の設定
-
-Supabase ダッシュボードの **SQL Editor** で以下を順に実行：
-
-```
-supabase/schema.sql  ← テーブル作成・RLS設定
-supabase/seed.sql    ← 初期問題データの投入
-```
-
-Authentication → Providers から **Google** を有効化（任意）。
-
-### 3. 依存パッケージのインストール
+### 1. 依存パッケージをインストール
 
 ```bash
 npm install
 ```
 
-### 4. 開発サーバーの起動
+### 2. 環境変数を作成
+
+`.env.local.example` をコピーして `.env.local` を作成します。
+
+```bash
+cp .env.local.example .env.local
+```
+
+`.env.local` にSupabaseの値を設定します。
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=SupabaseプロジェクトURL
+NEXT_PUBLIC_SUPABASE_ANON_KEY=Supabase anonキー
+```
+
+`.env.local` はGitHubに上げないでください。
+
+### 3. Supabaseを準備
+
+Supabase Dashboardの SQL Editor で、以下を順番に実行します。
+
+```text
+supabase/schema.sql
+supabase/seed.sql
+```
+
+`schema.sql` には以下が含まれます。
+
+- テーブル作成
+- RLS設定
+- 集計用ビュー
+- クイズ高速化用の `get_random_problems` 関数
+- 必要な権限設定
+
+`seed.sql` は既存の `problems` と `user_answers` を削除してから、中1・1学期中間範囲の問題を投入します。
+
+### 4. Supabase Authを設定
+
+Supabase Dashboardで以下を設定します。
+
+- Authentication > Providers > Email を有効化
+- Googleログインを使う場合は Providers > Google を有効化
+- Authentication > URL Configuration にローカルと本番URLを登録
+
+登録するURLの例:
+
+```text
+http://localhost:3000
+https://tyugaku-benkyo.vercel.app
+```
+
+Google OAuth側にはSupabaseのCallback URLを登録します。
+
+### 5. 開発サーバーを起動
 
 ```bash
 npm run dev
 ```
 
-[http://localhost:3000](http://localhost:3000) をブラウザで開く。
+ブラウザで開きます。
+
+```text
+http://localhost:3000
+```
+
+## 開発時の確認
+
+修正後は最低限以下を実行します。
+
+```bash
+npm run lint
+npm run build
+```
+
+Supabaseの `schema.sql` や `seed.sql` を変更した場合は、Supabase SQL Editorでも再実行してください。
+
+## デプロイ
+
+VercelでGitHubリポジトリを連携し、Environment Variablesに `.env.local` と同じ値を設定します。
+
+GitHubに反映すると、Vercelが自動で再デプロイします。
+
+```bash
+git add .
+git commit -m "Update app"
+git push
+```
+
+DB構造を変えた場合は、GitHubにpushするだけではSupabaseには反映されません。必ずSupabase SQL Editorで `schema.sql` を実行します。
 
 ## ディレクトリ構成
 
-```
+```text
 tyugaku-benkyo/
 ├── docs/
-│   └── 仕様書.md           # 機能要件・画面設計・DBスキーマ
+│   └── 仕様書.md
 ├── supabase/
-│   ├── schema.sql          # DBスキーマ（テーブル定義・RLS）
-│   └── seed.sql            # 初期問題データ
+│   ├── schema.sql
+│   └── seed.sql
 ├── src/
-│   ├── proxy.ts            # 認証プロキシ（Next.js 16）
 │   ├── app/
-│   │   ├── page.tsx        # ランディングページ
-│   │   ├── layout.tsx      # ルートレイアウト
-│   │   ├── auth/           # 認証ページ群
-│   │   └── (main)/         # ログイン後ページ群
-│   ├── components/         # 共通コンポーネント
-│   ├── lib/supabase/       # Supabaseクライアント
-│   └── types/              # TypeScript型定義
-├── .env.local.example      # 環境変数テンプレート
+│   │   ├── page.tsx
+│   │   ├── auth/
+│   │   └── (main)/
+│   ├── components/
+│   ├── lib/supabase/
+│   └── proxy.ts
+├── .env.local.example
 └── README.md
 ```
 
-## デプロイ（Vercel）
+## ドキュメント
 
-1. Vercel にリポジトリを連携
-2. Environment Variables に `.env.local` の内容を設定
-3. デプロイ実行
+- [仕様書](docs/仕様書.md)
 
----
-
-© 2025 テスタン
