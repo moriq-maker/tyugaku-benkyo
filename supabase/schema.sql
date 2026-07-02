@@ -23,10 +23,31 @@ create table if not exists problems (
   choice_c text not null,                                              -- 選択肢C
   choice_d text not null,                                              -- 選択肢D
   answer char(1) not null check (answer in ('A','B','C','D')),        -- 正解
+  problem_format text not null default 'multiple_choice'
+    check (problem_format in ('multiple_choice','short_answer')),      -- 問題形式
+  correct_text text,                                                    -- 短答式の正答
+  accepted_answers text[] not null default '{}',                        -- 短答式の別解
   explanation text,                                                    -- 解説
   difficulty int default 1 check (difficulty between 1 and 3),       -- 難易度（1:基礎 2:標準 3:応用）
   created_at timestamptz default now()
 );
+
+alter table problems add column if not exists problem_format text not null default 'multiple_choice';
+alter table problems add column if not exists correct_text text;
+alter table problems add column if not exists accepted_answers text[] not null default '{}';
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'problems_problem_format_check'
+  ) then
+    alter table problems
+      add constraint problems_problem_format_check
+      check (problem_format in ('multiple_choice','short_answer'));
+  end if;
+end $$;
 
 create index if not exists problems_subject_grade_term_idx on problems(subject_id, grade, exam_term);
 
@@ -122,28 +143,31 @@ select
   p.category,
   count(*) filter (where not ua.is_correct)::int as wrong_count,
   max(ua.answered_at) filter (where not ua.is_correct) as latest_wrong_at,
-  max(ua.answered_at) as latest_answered_at
+  max(ua.answered_at) as latest_answered_at,
+  p.problem_format
 from user_answers ua
 join problems p on p.id = ua.problem_id
-group by ua.user_id, ua.problem_id, p.subject_id, p.grade, p.category
+group by ua.user_id, ua.problem_id, p.subject_id, p.grade, p.category, p.problem_format
 having count(*) filter (where not ua.is_correct) > 0
   and (array_agg(ua.is_correct order by ua.answered_at desc))[1] = false;
 
 create or replace function get_random_problems(
   p_subject_id uuid,
   p_grade int,
-  p_limit int default 10
+  p_limit int default 10,
+  p_problem_format text default 'multiple_choice'
 )
 returns setof problems
 language sql
 stable
-security definer
+security invoker
 set search_path = public
 as $$
   select *
   from problems
   where subject_id = p_subject_id
     and grade = p_grade
+    and problem_format = p_problem_format
   order by random()
   limit p_limit;
 $$;
@@ -264,6 +288,20 @@ as $$
       gl.grade,
       coalesce(pgs.total, 0) as count,
       coalesce((
+        select count(*)::int
+        from problems p
+        join selected_subject ss on ss.id = p.subject_id
+        where p.grade = gl.grade
+          and p.problem_format = 'multiple_choice'
+      ), 0) as multiple_choice_count,
+      coalesce((
+        select count(*)::int
+        from problems p
+        join selected_subject ss on ss.id = p.subject_id
+        where p.grade = gl.grade
+          and p.problem_format = 'short_answer'
+      ), 0) as short_answer_count,
+      coalesce((
         select jsonb_agg(category order by category)
         from (
           select distinct p.category
@@ -283,12 +321,46 @@ as $$
       ), 0) as wrong_count,
       coalesce((
         select count(*)::int
+        from user_problem_review_priority priority
+        join selected_subject ss on ss.id = priority.subject_id
+        where priority.user_id = auth.uid()
+          and priority.grade = gl.grade
+          and priority.problem_format = 'multiple_choice'
+      ), 0) as wrong_multiple_choice_count,
+      coalesce((
+        select count(*)::int
+        from user_problem_review_priority priority
+        join selected_subject ss on ss.id = priority.subject_id
+        where priority.user_id = auth.uid()
+          and priority.grade = gl.grade
+          and priority.problem_format = 'short_answer'
+      ), 0) as wrong_short_answer_count,
+      coalesce((
+        select count(*)::int
         from user_bookmarks bookmark
         join problems p on p.id = bookmark.problem_id
         join selected_subject ss on ss.id = p.subject_id
         where bookmark.user_id = auth.uid()
           and p.grade = gl.grade
-      ), 0) as bookmark_count
+      ), 0) as bookmark_count,
+      coalesce((
+        select count(*)::int
+        from user_bookmarks bookmark
+        join problems p on p.id = bookmark.problem_id
+        join selected_subject ss on ss.id = p.subject_id
+        where bookmark.user_id = auth.uid()
+          and p.grade = gl.grade
+          and p.problem_format = 'multiple_choice'
+      ), 0) as bookmark_multiple_choice_count,
+      coalesce((
+        select count(*)::int
+        from user_bookmarks bookmark
+        join problems p on p.id = bookmark.problem_id
+        join selected_subject ss on ss.id = p.subject_id
+        where bookmark.user_id = auth.uid()
+          and p.grade = gl.grade
+          and p.problem_format = 'short_answer'
+      ), 0) as bookmark_short_answer_count
     from grade_list gl
     left join selected_subject ss on true
     left join problem_grade_stats pgs
@@ -319,9 +391,15 @@ as $$
             jsonb_build_object(
               'grade', grade,
               'count', count,
+              'multiple_choice_count', multiple_choice_count,
+              'short_answer_count', short_answer_count,
               'categories', categories,
               'wrong_count', wrong_count,
-              'bookmark_count', bookmark_count
+              'wrong_multiple_choice_count', wrong_multiple_choice_count,
+              'wrong_short_answer_count', wrong_short_answer_count,
+              'bookmark_count', bookmark_count,
+              'bookmark_multiple_choice_count', bookmark_multiple_choice_count,
+              'bookmark_short_answer_count', bookmark_short_answer_count
             )
             order by grade
           )
@@ -354,7 +432,7 @@ grant select on problem_grade_stats to anon, authenticated;
 grant select on user_answer_category_stats to authenticated;
 grant select on user_answer_daily_stats to authenticated;
 grant select on user_problem_review_priority to authenticated;
-grant execute on function get_random_problems(uuid, int, int) to anon, authenticated;
+grant execute on function get_random_problems(uuid, int, int, text) to anon, authenticated;
 grant execute on function get_dashboard_summary() to authenticated;
 grant execute on function get_subject_summary(text) to authenticated;
 

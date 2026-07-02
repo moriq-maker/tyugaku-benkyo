@@ -1,5 +1,5 @@
 -- 中学1年生 1学期中間テスト範囲（4月〜6月）用の初期データ
--- 対象: 5科目 / 中1のみ / 各科目60問
+-- 対象: 5科目 / 中1のみ / 各科目60問 + 国語の短答式10問
 
 insert into subjects (name, name_en, icon, color) values
   ('数学', 'math', '数', '#6366f1'),
@@ -411,5 +411,30 @@ join (
     ('複数形', 'bus の複数形として正しいものはどれですか。', 'buss', 'buses', 'busies', 'bus', 'B', 'sで終わる語はesをつけることが多いです。', 2),
     ('疑問詞', '( ) do you play soccer? After school.', 'What', 'When', 'Who', 'Where', 'B', '時をたずねるときはWhenを使います。', 2),
     ('疑問詞', '( ) do you study? At home.', 'What', 'Where', 'Who', 'How', 'B', '場所をたずねるときはWhereを使います。', 2)
-  ) as e(category, question, choice_a, choice_b, choice_c, choice_d, answer, explanation, difficulty)
+) as e(category, question, choice_a, choice_b, choice_c, choice_d, answer, explanation, difficulty)
 ) v on s.name_en = v.subject_en;
+
+-- 国語: 4択以外の短答式問題
+insert into problems (
+  subject_id, grade, exam_term, category, passage, question,
+  choice_a, choice_b, choice_c, choice_d, answer,
+  problem_format, correct_text, accepted_answers, explanation, difficulty
+)
+select s.id, 1, '中1 1学期中間', v.category, v.passage, v.question,
+  '', '', '', '', 'A',
+  'short_answer', v.correct_text, v.accepted_answers, v.explanation, v.difficulty
+from subjects s
+join (
+  values
+  ('japanese', '短答・漢字（読み）', null, '「快晴」の読みをひらがなで答えなさい。', 'かいせい', array['かいせい'], '「快晴」は「かいせい」と読みます。よく晴れた空のことです。', 1),
+  ('japanese', '短答・漢字（読み）', null, '「責任」の読みをひらがなで答えなさい。', 'せきにん', array['せきにん'], '「責任」は「せきにん」と読みます。', 1),
+  ('japanese', '短答・漢字（読み）', null, '「観察」の読みをひらがなで答えなさい。', 'かんさつ', array['かんさつ'], '「観察」は「かんさつ」と読みます。', 1),
+  ('japanese', '短答・漢字（書き）', null, '「せいちょう」を漢字で答えなさい。', '成長', array['成長'], '大きく育つことは「成長」と書きます。', 1),
+  ('japanese', '短答・漢字（書き）', null, '「きろく」を漢字で答えなさい。', '記録', array['記録'], '書き残すことは「記録」と書きます。', 1),
+  ('japanese', '短答・文法', null, '「走る」の品詞を答えなさい。', '動詞', array['動詞'], '「走る」は動作を表すので動詞です。', 1),
+  ('japanese', '短答・文法', null, '「美しい」の品詞を答えなさい。', '形容詞', array['形容詞'], '言い切りが「い」で終わり、性質を表す語は形容詞です。', 1),
+  ('japanese', '短答・文法', null, '「空が青い。」の述語を答えなさい。', '青い', array['青い'], '「どうだ」にあたる「青い」が述語です。', 2),
+  ('japanese', '短答・表現技法', null, '「風が歌う」のように、人でないものを人のように表す表現技法を答えなさい。', '擬人法', array['ぎじんほう','擬人法'], '人でないものを人のように表す技法は擬人法です。', 2),
+  ('japanese', '短答・表現技法', null, '文末を名詞で止める表現技法を答えなさい。', '体言止め', array['体言止め','たいげんどめ'], '名詞で文を終える表現を体言止めといいます。', 2)
+) as v(subject_en, category, passage, question, correct_text, accepted_answers, explanation, difficulty)
+on s.name_en = v.subject_en;

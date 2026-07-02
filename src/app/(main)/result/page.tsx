@@ -10,6 +10,7 @@ type StoredData = {
   subject: Subject;
   grade: number;
   mode?: "normal" | "review" | "bookmarked";
+  problemFormat?: "multiple_choice" | "short_answer";
 };
 
 const GRADE_LABELS: Record<number, string> = {
@@ -25,13 +26,15 @@ function getScoreMessage(rate: number): string {
   return "まずは間違えた問題を解き直して、出題形式に慣れましょう。";
 }
 
-function getChoice(problem: QuizResult["problem"], answer: "A" | "B" | "C" | "D") {
+function getChoice(problem: QuizResult["problem"], answer: string) {
+  if (problem.problem_format === "short_answer") return answer;
+
   return {
     A: problem.choice_a,
     B: problem.choice_b,
     C: problem.choice_c,
     D: problem.choice_d,
-  }[answer];
+  }[answer as "A" | "B" | "C" | "D"];
 }
 
 export default function ResultPage() {
@@ -54,7 +57,7 @@ export default function ResultPage() {
     return <div className="py-20 text-center text-sm font-semibold text-slate-500">読み込み中...</div>;
   }
 
-  const { results, subject, grade, mode } = data;
+  const { results, subject, grade, mode, problemFormat } = data;
   const correct = results.filter((result) => result.isCorrect).length;
   const wrong = results.length - correct;
   const total = results.length;
@@ -72,6 +75,7 @@ export default function ResultPage() {
           <div>
             <p className="text-sm font-semibold text-slate-500">
               {subject.name} / {GRADE_LABELS[grade]}
+              {problemFormat === "short_answer" ? " / 短答式" : " / 4択"}
               {mode === "review" ? " / 優先復習" : mode === "bookmarked" ? " / 保存問題" : ""}
             </p>
             <h1 className="mt-2 text-2xl font-bold text-slate-950">結果</h1>
@@ -133,7 +137,9 @@ export default function ResultPage() {
                         あなた: {getChoice(result.problem, result.userAnswer)}
                       </p>
                       <p className="rounded-md bg-emerald-50 px-3 py-2 text-emerald-800">
-                        正解: {getChoice(result.problem, result.problem.answer)}
+                        正解: {result.problem.problem_format === "short_answer"
+                          ? result.problem.correct_text
+                          : getChoice(result.problem, result.problem.answer)}
                       </p>
                     </div>
                   )}

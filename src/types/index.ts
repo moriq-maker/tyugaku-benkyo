@@ -19,6 +19,9 @@ export type Problem = {
   choice_c: string;
   choice_d: string;
   answer: "A" | "B" | "C" | "D";
+  problem_format: "multiple_choice" | "short_answer";
+  correct_text: string | null;
+  accepted_answers: string[];
   explanation: string | null;
   difficulty: 1 | 2 | 3;
 };
@@ -33,7 +36,7 @@ export type UserAnswer = {
 
 export type QuizResult = {
   problem: Problem;
-  userAnswer: "A" | "B" | "C" | "D";
+  userAnswer: string;
   isCorrect: boolean;
 };
 

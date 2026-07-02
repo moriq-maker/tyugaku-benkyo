@@ -8,6 +8,24 @@ import type { Problem, Subject, QuizResult } from "@/types";
 
 const CHOICES = ["A", "B", "C", "D"] as const;
 
+function normalizeAnswer(value: string): string {
+  return value
+    .trim()
+    .replace(/\s+/g, "")
+    .replace(/　+/g, "")
+    .toLowerCase();
+}
+
+function isShortAnswerCorrect(problem: Problem, value: string): boolean {
+  const normalized = normalizeAnswer(value);
+  const accepted = [
+    problem.correct_text,
+    ...(problem.accepted_answers ?? []),
+  ].filter(Boolean) as string[];
+
+  return accepted.some((answer) => normalizeAnswer(answer) === normalized);
+}
+
 function Difficulty({ level }: { level: number }) {
   return (
     <span className="rounded-md bg-amber-50 px-2 py-1 text-xs font-bold text-amber-700">
@@ -22,12 +40,14 @@ export default function QuizClient({
   problems,
   grade,
   mode,
+  problemFormat,
   initialBookmarkedProblemIds,
 }: {
   subject: Subject;
   problems: Problem[];
   grade: number;
   mode: "normal" | "review" | "bookmarked";
+  problemFormat: "multiple_choice" | "short_answer";
   initialBookmarkedProblemIds: string[];
 }) {
   const router = useRouter();
@@ -42,6 +62,7 @@ export default function QuizClient({
   const [bookmarkSaving, setBookmarkSaving] = useState(false);
 
   const current = problems[currentIndex];
+  const isShortAnswer = problemFormat === "short_answer";
   const isLastQuestion = currentIndex === problems.length - 1;
   const progress = Math.round(((currentIndex + 1) / problems.length) * 100);
 
@@ -60,6 +81,11 @@ export default function QuizClient({
     setSelected(choice);
     setShowAnswer(true);
   }, [showAnswer]);
+
+  const handleCheckShortAnswer = useCallback(() => {
+    if (showAnswer || !selected?.trim()) return;
+    setShowAnswer(true);
+  }, [selected, showAnswer]);
 
   const handleToggleBookmark = useCallback(async () => {
     if (bookmarkSaving) return;
@@ -103,12 +129,14 @@ export default function QuizClient({
   }, [bookmarkSaving, bookmarkedIds, current.id]);
 
   const handleNext = useCallback(async () => {
-    if (!selected) return;
+    if (!selected?.trim()) return;
 
-    const isCorrect = selected === current.answer;
+    const isCorrect = isShortAnswer
+      ? isShortAnswerCorrect(current, selected)
+      : selected === current.answer;
     const newResult: QuizResult = {
       problem: current,
-      userAnswer: selected as "A" | "B" | "C" | "D",
+      userAnswer: selected,
       isCorrect,
     };
     const updatedResults = [...results, newResult];
@@ -138,6 +166,7 @@ export default function QuizClient({
           subject,
           grade,
           mode,
+          problemFormat,
         })
       );
       router.push("/result");
@@ -148,7 +177,7 @@ export default function QuizClient({
     setCurrentIndex((index) => index + 1);
     setSelected(null);
     setShowAnswer(false);
-  }, [selected, current, results, isLastQuestion, subject, grade, mode, router]);
+  }, [selected, current, results, isLastQuestion, subject, grade, mode, router, isShortAnswer, problemFormat]);
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -160,7 +189,7 @@ export default function QuizClient({
           <span className="truncate">← {subject.name}</span>
         </Link>
         <span className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600">
-          {mode === "review" ? "優先復習" : mode === "bookmarked" ? "ブックマーク" : "通常演習"}
+          {mode === "review" ? "優先復習" : mode === "bookmarked" ? "ブックマーク" : problemFormat === "short_answer" ? "短答式" : "4択"}
         </span>
       </div>
 
@@ -210,34 +239,62 @@ export default function QuizClient({
         </div>
 
         <div className="space-y-2 p-4">
-          {CHOICES.map((choice) => {
-            const text = getChoiceText(choice);
-            const isCorrect = choice === current.answer;
-            const isSelected = choice === selected;
-
-            let choiceStyle = "border-slate-200 bg-white text-slate-800 hover:border-slate-400";
-            if (showAnswer) {
-              if (isCorrect) choiceStyle = "border-emerald-500 bg-emerald-50 text-emerald-900";
-              else if (isSelected) choiceStyle = "border-red-500 bg-red-50 text-red-900";
-              else choiceStyle = "border-slate-200 bg-slate-50 text-slate-400";
-            }
-
-            return (
-              <button
-                key={choice}
-                onClick={() => handleSelect(choice)}
+          {isShortAnswer ? (
+            <div className="space-y-3">
+              <input
+                value={selected ?? ""}
+                onChange={(event) => setSelected(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") handleCheckShortAnswer();
+                }}
                 disabled={showAnswer}
-                className={`flex w-full items-start gap-3 rounded-md border px-4 py-3 text-left transition ${choiceStyle}`}
-              >
-                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-white text-sm font-bold text-slate-700">
-                  {choice}
-                </span>
-                <span className="min-w-0 flex-1 text-sm font-semibold leading-6">{text}</span>
-                {showAnswer && isCorrect && <span className="shrink-0 text-xs font-bold text-emerald-700 sm:text-sm">正解</span>}
-                {showAnswer && isSelected && !isCorrect && <span className="shrink-0 text-xs font-bold text-red-700 sm:text-sm">選択</span>}
-              </button>
-            );
-          })}
+                placeholder="答えを入力"
+                className="w-full rounded-md border border-slate-300 bg-white px-4 py-3 text-base font-semibold text-slate-950 outline-none transition focus:border-slate-900 disabled:bg-slate-50"
+              />
+              {showAnswer && (
+                <div
+                  className={`rounded-md border px-4 py-3 text-sm font-semibold ${
+                    isShortAnswerCorrect(current, selected ?? "")
+                      ? "border-emerald-500 bg-emerald-50 text-emerald-900"
+                      : "border-red-500 bg-red-50 text-red-900"
+                  }`}
+                >
+                  {isShortAnswerCorrect(current, selected ?? "")
+                    ? "正解です。"
+                    : `正解: ${current.correct_text ?? ""}`}
+                </div>
+              )}
+            </div>
+          ) : (
+            CHOICES.map((choice) => {
+              const text = getChoiceText(choice);
+              const isCorrect = choice === current.answer;
+              const isSelected = choice === selected;
+
+              let choiceStyle = "border-slate-200 bg-white text-slate-800 hover:border-slate-400";
+              if (showAnswer) {
+                if (isCorrect) choiceStyle = "border-emerald-500 bg-emerald-50 text-emerald-900";
+                else if (isSelected) choiceStyle = "border-red-500 bg-red-50 text-red-900";
+                else choiceStyle = "border-slate-200 bg-slate-50 text-slate-400";
+              }
+
+              return (
+                <button
+                  key={choice}
+                  onClick={() => handleSelect(choice)}
+                  disabled={showAnswer}
+                  className={`flex w-full items-start gap-3 rounded-md border px-4 py-3 text-left transition ${choiceStyle}`}
+                >
+                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-white text-sm font-bold text-slate-700">
+                    {choice}
+                  </span>
+                  <span className="min-w-0 flex-1 text-sm font-semibold leading-6">{text}</span>
+                  {showAnswer && isCorrect && <span className="shrink-0 text-xs font-bold text-emerald-700 sm:text-sm">正解</span>}
+                  {showAnswer && isSelected && !isCorrect && <span className="shrink-0 text-xs font-bold text-red-700 sm:text-sm">選択</span>}
+                </button>
+              );
+            })
+          )}
         </div>
       </section>
 
@@ -248,15 +305,19 @@ export default function QuizClient({
         </section>
       )}
 
-      {showAnswer && (
+      <div className="sticky bottom-0 mt-4 border-t border-slate-200 bg-[#f4f6f8]/95 py-3 backdrop-blur">
         <button
-          onClick={handleNext}
-          disabled={saving}
+          onClick={showAnswer ? handleNext : isShortAnswer ? handleCheckShortAnswer : undefined}
+          disabled={saving || !selected?.trim()}
           className="mt-4 w-full rounded-md bg-slate-900 py-3 text-sm font-bold text-white transition hover:bg-slate-700 disabled:opacity-60"
         >
-          {saving ? "保存中..." : isLastQuestion ? "結果を見る" : "次の問題へ"}
+          {saving
+            ? "保存中..."
+            : showAnswer
+              ? isLastQuestion ? "結果を見る" : "次の問題へ"
+              : isShortAnswer ? "答え合わせ" : "選択してください"}
         </button>
-      )}
+      </div>
     </div>
   );
 }

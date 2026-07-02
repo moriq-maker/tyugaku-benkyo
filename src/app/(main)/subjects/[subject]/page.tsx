@@ -18,9 +18,15 @@ const DIFFICULTY_LABELS = [
 type GradeSummary = {
   grade: number;
   count: number;
+  multiple_choice_count: number;
+  short_answer_count: number;
   categories: string[];
   wrong_count: number;
+  wrong_multiple_choice_count: number;
+  wrong_short_answer_count: number;
   bookmark_count: number;
+  bookmark_multiple_choice_count: number;
+  bookmark_short_answer_count: number;
 };
 
 type WeakCategory = {
@@ -54,6 +60,7 @@ export default async function SubjectPage({
   const subject = summary.subject;
   const gradeGroups = summary.grades;
   const weakCategories = summary.weak_categories;
+  const supportsShortAnswer = subject.name_en === "japanese";
 
   return (
     <div className="space-y-6">
@@ -89,9 +96,27 @@ export default async function SubjectPage({
       </section>
 
       <section className="grid gap-4">
-        {gradeGroups.map(({ grade, count, categories, wrong_count, bookmark_count }) => {
-          const wrongCount = wrong_count ?? 0;
+        {gradeGroups.map((gradeGroup) => {
+          const {
+            grade,
+            count,
+            multiple_choice_count,
+            short_answer_count,
+            categories,
+            wrong_multiple_choice_count,
+            wrong_short_answer_count,
+            bookmark_multiple_choice_count,
+            bookmark_short_answer_count,
+          } = gradeGroup;
+          const multipleChoiceCount = multiple_choice_count ?? count;
+          const shortAnswerCount = short_answer_count ?? 0;
+          const wrongMultipleChoiceCount = wrong_multiple_choice_count ?? 0;
+          const wrongShortAnswerCount = wrong_short_answer_count ?? 0;
+          const bookmarkMultipleChoiceCount = bookmark_multiple_choice_count ?? 0;
+          const bookmarkShortAnswerCount = bookmark_short_answer_count ?? 0;
           const enabled = count > 0;
+          const hasMultipleChoice = multipleChoiceCount > 0;
+          const hasShortAnswer = shortAnswerCount > 0;
 
           return (
             <div
@@ -119,30 +144,59 @@ export default async function SubjectPage({
                     </div>
                   )}
                 </div>
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  {wrongCount > 0 && (
+                <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
+                  {wrongMultipleChoiceCount > 0 && (
                     <Link
-                      href={`/quiz/${subjectEn}?grade=${grade}&review=wrong`}
+                      href={`/quiz/${subjectEn}?grade=${grade}&format=multiple_choice&review=wrong`}
                       className="rounded-md bg-red-600 px-4 py-2.5 text-center text-sm font-bold text-white transition hover:bg-red-700"
                     >
-                      優先復習 {wrongCount}問
+                      4択復習 {wrongMultipleChoiceCount}問
                     </Link>
                   )}
-                  {bookmark_count > 0 && (
+                  {wrongShortAnswerCount > 0 && (
                     <Link
-                      href={`/quiz/${subjectEn}?grade=${grade}&review=bookmarked`}
+                      href={`/quiz/${subjectEn}?grade=${grade}&format=short_answer&review=wrong`}
+                      className="rounded-md bg-red-600 px-4 py-2.5 text-center text-sm font-bold text-white transition hover:bg-red-700"
+                    >
+                      短答復習 {wrongShortAnswerCount}問
+                    </Link>
+                  )}
+                  {bookmarkMultipleChoiceCount > 0 && (
+                    <Link
+                      href={`/quiz/${subjectEn}?grade=${grade}&format=multiple_choice&review=bookmarked`}
                       className="rounded-md border border-amber-300 bg-amber-50 px-4 py-2.5 text-center text-sm font-bold text-amber-800 transition hover:bg-amber-100"
                     >
-                      保存問題 {bookmark_count}問
+                      4択保存 {bookmarkMultipleChoiceCount}問
                     </Link>
                   )}
-                  {enabled && (
+                  {bookmarkShortAnswerCount > 0 && (
                     <Link
-                      href={`/quiz/${subjectEn}?grade=${grade}`}
+                      href={`/quiz/${subjectEn}?grade=${grade}&format=short_answer&review=bookmarked`}
+                      className="rounded-md border border-amber-300 bg-amber-50 px-4 py-2.5 text-center text-sm font-bold text-amber-800 transition hover:bg-amber-100"
+                    >
+                      短答保存 {bookmarkShortAnswerCount}問
+                    </Link>
+                  )}
+                  {hasMultipleChoice && (
+                    <Link
+                      href={`/quiz/${subjectEn}?grade=${grade}&format=multiple_choice`}
                       className="rounded-md bg-slate-900 px-4 py-2.5 text-center text-sm font-bold text-white transition hover:bg-slate-700"
                     >
-                      10問スタート
+                      4択10問
                     </Link>
+                  )}
+                  {hasShortAnswer && (
+                    <Link
+                      href={`/quiz/${subjectEn}?grade=${grade}&format=short_answer`}
+                      className="rounded-md bg-indigo-600 px-4 py-2.5 text-center text-sm font-bold text-white transition hover:bg-indigo-700"
+                    >
+                      短答式10問
+                    </Link>
+                  )}
+                  {supportsShortAnswer && !hasShortAnswer && (
+                    <span className="rounded-md border border-slate-200 bg-slate-50 px-4 py-2.5 text-center text-sm font-bold text-slate-400">
+                      短答式はデータ反映待ち
+                    </span>
                   )}
                 </div>
               </div>
