@@ -183,7 +183,7 @@ export default function QuizClient({
   }, [selected, current, results, isLastQuestion, subject, grade, mode, router, isShortAnswer, problemFormat, category]);
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-5xl">
       <div className="mb-4 flex items-center justify-between gap-3">
         <Link
           href={`/subjects/${subject.name_en}`}
@@ -201,25 +201,38 @@ export default function QuizClient({
         </div>
       )}
 
-      <section className="panel mb-4 p-4">
-        <div className="mb-3 flex items-center justify-between text-sm">
-          <span className="font-bold text-slate-950">
-            {currentIndex + 1} / {problems.length}
-          </span>
-          <span className="font-semibold text-slate-500">{progress}%</span>
-        </div>
-        <div className="h-2 rounded-full bg-slate-100 shadow-inner">
-          <div
-            className="h-2 rounded-full bg-gradient-to-r from-indigo-600 to-cyan-500 transition-all duration-300"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-      </section>
+      <div className="grid gap-4 lg:grid-cols-[280px_1fr] lg:items-start">
+        <aside className="study-hero rounded-lg p-5 lg:sticky lg:top-24">
+          <div className="hero-content">
+            <p className="text-xs font-black text-cyan-100">SESSION</p>
+            <p className="mt-2 text-4xl font-black text-white">
+              {currentIndex + 1}
+              <span className="text-base font-bold text-slate-400"> / {problems.length}</span>
+            </p>
+            <p className="mt-2 text-sm font-semibold text-slate-300">{progress}% complete</p>
+            <div className="mt-5 h-3 rounded-full bg-white/10">
+              <div
+                className="h-3 rounded-full bg-cyan-400 transition-all duration-300"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <div className="mt-5 grid grid-cols-2 gap-2">
+              <div className="data-tile rounded-md p-3">
+                <p className="text-[11px] font-bold text-slate-400">教科</p>
+                <p className="mt-1 text-sm font-black text-white">{subject.name}</p>
+              </div>
+              <div className="data-tile rounded-md p-3">
+                <p className="text-[11px] font-bold text-slate-400">形式</p>
+                <p className="mt-1 text-sm font-black text-white">{isShortAnswer ? "短答" : "4択"}</p>
+              </div>
+            </div>
+          </div>
+        </aside>
 
-      <section className="panel overflow-hidden">
-        <div className="border-b border-slate-200 p-5">
+      <section className="panel overflow-hidden rounded-lg">
+        <div className="border-b border-slate-200 bg-white p-5">
           <div className="mb-4 flex flex-wrap items-center gap-2">
-            <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-bold text-slate-600">
+            <span className="rounded-md bg-slate-950 px-2 py-1 text-xs font-bold text-white">
               {current.category}
             </span>
             <Difficulty level={current.difficulty} />
@@ -241,12 +254,12 @@ export default function QuizClient({
               {current.passage}
             </div>
           )}
-          <h1 className="text-xl font-bold leading-8 text-slate-950">
+          <h1 className="text-2xl font-black leading-9 text-slate-950">
             {current.question}
           </h1>
         </div>
 
-        <div className="space-y-2 p-4">
+        <div className="space-y-3 bg-slate-50/70 p-4 sm:p-5">
           {isShortAnswer ? (
             <div className="space-y-3">
               <input
@@ -257,7 +270,7 @@ export default function QuizClient({
                 }}
                 disabled={showAnswer}
                 placeholder="答えを入力"
-                className="focus-ring w-full rounded-md border border-slate-300 bg-white px-4 py-3 text-base font-semibold text-slate-950 outline-none transition focus:border-slate-900 disabled:bg-slate-50"
+                className="focus-ring w-full rounded-md border border-slate-300 bg-white px-4 py-4 text-lg font-bold text-slate-950 outline-none transition focus:border-slate-900 disabled:bg-slate-50"
               />
               {showAnswer && (
                 <div
@@ -279,7 +292,7 @@ export default function QuizClient({
               const isCorrect = choice === current.answer;
               const isSelected = choice === selected;
 
-              let choiceStyle = "border-slate-200 bg-white text-slate-800 hover:-translate-y-0.5 hover:border-slate-400 hover:shadow-md";
+              let choiceStyle = "border-slate-200 bg-white text-slate-800 hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md";
               if (showAnswer) {
                 if (isCorrect) choiceStyle = "border-emerald-500 bg-emerald-50 text-emerald-900";
                 else if (isSelected) choiceStyle = "border-red-500 bg-red-50 text-red-900";
@@ -291,9 +304,9 @@ export default function QuizClient({
                   key={choice}
                   onClick={() => handleSelect(choice)}
                   disabled={showAnswer}
-                  className={`focus-ring flex w-full items-start gap-3 rounded-md border px-4 py-3 text-left transition ${choiceStyle}`}
+                  className={`focus-ring flex w-full items-start gap-3 rounded-md border px-4 py-4 text-left transition ${choiceStyle}`}
                 >
-                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md border border-slate-200 bg-white text-sm font-bold text-slate-700">
+                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md border border-slate-200 bg-slate-950 text-sm font-black text-white">
                     {choice}
                   </span>
                   <span className="min-w-0 flex-1 text-sm font-semibold leading-6">{text}</span>
@@ -305,15 +318,16 @@ export default function QuizClient({
           )}
         </div>
       </section>
+      </div>
 
       {showAnswer && current.explanation && (
-        <section className="mt-4 rounded-lg border border-blue-200 bg-blue-50/90 p-4 shadow-sm">
-          <p className="text-sm font-bold text-blue-900">解説</p>
+        <section className="ml-auto mt-4 max-w-3xl rounded-lg border border-blue-200 bg-blue-50/90 p-4 shadow-sm">
+          <p className="text-sm font-black text-blue-900">解説</p>
           <p className="mt-2 text-sm leading-6 text-blue-900">{current.explanation}</p>
         </section>
       )}
 
-      <div className="sticky bottom-0 mt-4 border-t border-slate-200 bg-[#f5f7fb]/92 py-3 backdrop-blur">
+      <div className="sticky bottom-0 ml-auto mt-4 max-w-3xl border-t border-slate-200 bg-[#eef2f7]/92 py-3 backdrop-blur">
         <button
           onClick={showAnswer ? handleNext : isShortAnswer ? handleCheckShortAnswer : undefined}
           disabled={saving || !selected?.trim()}

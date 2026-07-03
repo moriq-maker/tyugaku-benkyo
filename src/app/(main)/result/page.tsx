@@ -69,22 +69,22 @@ export default function ResultPage() {
 
   return (
     <div className="space-y-6">
-      <section className="panel p-5 sm:p-6">
-        <div className="grid gap-6 md:grid-cols-[220px_1fr] md:items-center">
-          <div className="rounded-lg bg-slate-950 p-5 text-white shadow-xl shadow-slate-900/20">
-            <p className="text-sm font-semibold text-slate-300">Score</p>
-            <p className="mt-2 text-5xl font-bold">{rate}%</p>
+      <section className="study-hero rounded-lg p-5 sm:p-7">
+        <div className="hero-content grid gap-6 md:grid-cols-[240px_1fr] md:items-center">
+          <div className="data-tile rounded-lg p-5 text-white">
+            <p className="text-sm font-semibold text-slate-300">SCORE</p>
+            <p className="mt-2 text-6xl font-black">{rate}%</p>
             <p className="mt-2 text-sm text-slate-300">{correct}/{total}問 正解</p>
           </div>
           <div>
-            <p className="text-sm font-semibold text-slate-500">
+            <p className="text-sm font-semibold text-cyan-100">
               {subject.name} / {GRADE_LABELS[grade]}
               {problemFormat === "short_answer" ? " / 短答式" : " / 4択"}
               {category ? ` / ${category}` : ""}
               {mode === "review" ? " / 優先復習" : mode === "bookmarked" ? " / 保存問題" : ""}
             </p>
-            <h1 className="mt-2 text-2xl font-bold text-slate-950">結果</h1>
-            <p className="mt-3 text-sm leading-6 text-slate-600">{getScoreMessage(rate)}</p>
+            <h1 className="mt-2 text-3xl font-black text-white">演習結果</h1>
+            <p className="mt-3 text-sm leading-7 text-slate-300">{getScoreMessage(rate)}</p>
             <div className="mt-5 flex flex-col gap-2 sm:flex-row">
               {wrong > 0 && (
                 <Link
@@ -102,7 +102,7 @@ export default function ResultPage() {
               </Link>
               <Link
                 href="/dashboard"
-                className="focus-ring rounded-md border border-slate-300 bg-white px-4 py-2.5 text-center text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+                className="focus-ring rounded-md border border-white/15 bg-white/10 px-4 py-2.5 text-center text-sm font-bold text-white transition hover:bg-white/15"
               >
                 ダッシュボード
               </Link>
@@ -112,12 +112,13 @@ export default function ResultPage() {
       </section>
 
       <section>
-        <h2 className="mb-3 text-lg font-bold text-slate-950">振り返り</h2>
+        <p className="text-xs font-black text-blue-700">REVIEW</p>
+        <h2 className="mb-3 mt-1 text-2xl font-black text-slate-950">振り返り</h2>
         <div className="space-y-3">
           {results.map((result, index) => (
             <div
               key={result.problem.id}
-              className={`panel p-4 ${
+              className={`panel rounded-lg p-4 ${
                 result.isCorrect ? "border-slate-200" : "border-red-200"
               }`}
             >

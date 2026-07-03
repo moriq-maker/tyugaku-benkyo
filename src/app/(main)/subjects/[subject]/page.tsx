@@ -82,25 +82,25 @@ export default async function SubjectPage({
         ← ダッシュボード
       </Link>
 
-      <section className="panel p-5 sm:p-6">
-        <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+      <section className="study-hero rounded-lg p-5 sm:p-7">
+        <div className="hero-content flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
           <div className="flex items-start gap-4">
-            <span className="grid h-12 w-12 place-items-center rounded-md bg-slate-950 text-base font-bold text-white shadow-lg shadow-slate-900/20">
+            <span className="grid h-14 w-14 place-items-center rounded-md bg-white text-lg font-black text-slate-950 shadow-lg shadow-slate-950/20">
               {subject.icon}
             </span>
             <div>
-              <p className="text-sm font-semibold text-slate-500">中1・1学期中間テスト範囲</p>
-              <h1 className="mt-1 text-3xl font-bold text-slate-950">{subject.name}</h1>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-                通常演習はランダム10問。間違えた問題がある場合は、解き直しで最新の不正解だけを復習できます。
+              <p className="text-sm font-bold text-cyan-100">中1・1学期中間テスト範囲</p>
+              <h1 className="mt-1 text-4xl font-black text-white">{subject.name}</h1>
+              <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300">
+                形式別、単元別、復習から選んで10問演習できます。苦手だけを狙って短く回す設計です。
               </p>
             </div>
           </div>
-          <div className="surface px-4 py-3">
-            <p className="text-xs font-semibold text-slate-500">収録問題</p>
-            <p className="mt-1 text-2xl font-bold text-slate-950">
+          <div className="data-tile rounded-lg px-5 py-4">
+            <p className="text-xs font-semibold text-slate-300">収録問題</p>
+            <p className="mt-1 text-3xl font-black text-white">
               {gradeGroups.reduce((sum, item) => sum + item.count, 0)}
-              <span className="ml-1 text-sm text-slate-500">問</span>
+              <span className="ml-1 text-sm text-slate-300">問</span>
             </p>
           </div>
         </div>
@@ -134,13 +134,14 @@ export default async function SubjectPage({
           return (
             <div
               key={grade}
-              className={`panel p-5 ${
+              className={`panel rounded-lg p-5 ${
                 enabled ? "" : "opacity-60"
               }`}
             >
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
-                  <h2 className="text-lg font-bold text-slate-950">{GRADE_LABELS[grade]}</h2>
+                  <p className="text-xs font-black text-blue-700">PRACTICE MODE</p>
+                  <h2 className="mt-1 text-xl font-black text-slate-950">{GRADE_LABELS[grade]}</h2>
                   <p className="mt-1 text-sm text-slate-500">
                     {enabled ? `${count}問から10問を出題` : "問題準備中"}
                   </p>
@@ -209,16 +210,17 @@ export default async function SubjectPage({
                 </div>
               </div>
               {categorySummaries.length > 0 && (
-                <div className="mt-5 border-t border-slate-200 pt-5">
+                  <div className="mt-6 border-t border-slate-200 pt-5">
                   <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
                     <div>
-                      <h3 className="text-sm font-bold text-slate-950">単元別モード</h3>
+                      <p className="text-xs font-black text-cyan-700">UNIT MODE</p>
+                      <h3 className="mt-1 text-lg font-black text-slate-950">単元別モード</h3>
                       <p className="mt-1 text-xs font-semibold text-slate-500">
                         苦手な単元だけを選んで10問演習できます。
                       </p>
                     </div>
                   </div>
-                  <div className="mt-3 grid gap-3 lg:grid-cols-2">
+                  <div className="mt-4 grid gap-3 lg:grid-cols-2">
                     {categorySummaries.map((unit) => {
                       const categoryParam = encodeURIComponent(unit.category);
                       const unitMultipleChoiceCount = unit.multiple_choice_count ?? 0;
@@ -229,10 +231,10 @@ export default async function SubjectPage({
                       const unitBookmarkShortAnswerCount = unit.bookmark_short_answer_count ?? 0;
 
                       return (
-                        <div key={unit.category} className="surface p-3 transition hover:-translate-y-0.5 hover:shadow-md">
+                        <div key={unit.category} className="surface rounded-lg p-4 transition hover:-translate-y-0.5 hover:bg-white hover:shadow-md">
                           <div className="flex items-start justify-between gap-3">
                             <div>
-                              <p className="text-sm font-bold text-slate-900">{unit.category}</p>
+                              <p className="text-base font-black text-slate-900">{unit.category}</p>
                               <p className="mt-1 text-xs font-semibold text-slate-500">
                                 {unit.count}問 / 4択{unitMultipleChoiceCount}・短答{unitShortAnswerCount}
                               </p>
@@ -300,10 +302,11 @@ export default async function SubjectPage({
       </section>
 
       {weakCategories.length > 0 && (
-        <section className="panel p-5">
+        <section className="panel rounded-lg p-5">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h3 className="text-sm font-bold text-slate-950">弱点カテゴリ</h3>
+              <p className="text-xs font-black text-red-700">WEAK POINT</p>
+              <h3 className="mt-1 text-lg font-black text-slate-950">弱点カテゴリ</h3>
               <p className="mt-1 text-sm text-slate-500">正答率が低い順に表示しています。</p>
             </div>
           </div>
@@ -331,8 +334,9 @@ export default async function SubjectPage({
         </section>
       )}
 
-        <section className="panel p-5">
-        <h3 className="text-sm font-bold text-slate-950">難易度</h3>
+      <section className="panel rounded-lg p-5">
+        <p className="text-xs font-black text-amber-700">LEVEL GUIDE</p>
+        <h3 className="mt-1 text-lg font-black text-slate-950">難易度</h3>
         <div className="mt-3 grid gap-3 md:grid-cols-3">
           {DIFFICULTY_LABELS.map(([label, description], index) => (
             <div key={label} className="surface p-3">

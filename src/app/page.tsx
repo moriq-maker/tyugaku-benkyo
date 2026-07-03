@@ -40,15 +40,16 @@ export default function LandingPage() {
       </header>
 
       <main className="mx-auto max-w-6xl px-4 pb-12 pt-6 sm:px-5 sm:pb-16 sm:pt-10">
-        <section className="grid gap-10 lg:grid-cols-[1fr_400px] lg:items-end">
-          <div>
-            <p className="mb-4 inline-flex rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-600">
+        <section className="study-hero rounded-lg p-5 sm:p-8">
+          <div className="hero-content grid gap-10 lg:grid-cols-[1fr_360px] lg:items-end">
+            <div>
+            <p className="mb-4 inline-flex rounded-md border border-white/15 bg-white/10 px-3 py-1.5 text-sm font-bold text-cyan-100">
               中学1年生の4月から6月に集中
             </p>
-            <h1 className="max-w-3xl text-3xl font-bold leading-tight tracking-normal text-slate-950 sm:text-5xl lg:text-6xl">
+            <h1 className="max-w-3xl text-4xl font-black leading-tight tracking-normal text-white sm:text-5xl lg:text-6xl">
               テスト前に、何を間違えたかまで残す。
             </h1>
-            <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-600 sm:mt-6 sm:text-base sm:leading-8">
+            <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-300 sm:mt-6 sm:text-base sm:leading-8">
               テスタンは、定期テスト範囲の問題を解き、間違いを記録し、解き直しまでつなげる学習サポートアプリです。
               まずは中1の1学期中間範囲に絞って、毎日の復習を軽く始められる形にしています。
             </p>
@@ -61,23 +62,24 @@ export default function LandingPage() {
               </Link>
               <Link
                 href="/auth/login"
-                className="focus-ring rounded-md border border-slate-300 bg-white px-6 py-3 text-center text-sm font-bold text-slate-800 transition hover:bg-slate-50"
+                className="focus-ring rounded-md border border-white/15 bg-white/10 px-6 py-3 text-center text-sm font-bold text-white transition hover:bg-white/15"
               >
                 ログイン
               </Link>
             </div>
           </div>
 
-          <div className="panel p-5">
-            <p className="text-sm font-bold text-slate-500">現在の収録範囲</p>
-            <div className="mt-4 divide-y divide-slate-100">
+          <div className="data-tile rounded-lg p-5">
+            <p className="text-sm font-bold text-slate-300">現在の収録範囲</p>
+            <div className="mt-4 divide-y divide-white/10">
               {stats.map(([label, value]) => (
                 <div key={label} className="flex items-center justify-between py-4">
-                  <span className="text-sm font-medium text-slate-500">{label}</span>
-                  <span className="text-lg font-bold text-slate-950">{value}</span>
+                  <span className="text-sm font-medium text-slate-300">{label}</span>
+                  <span className="text-xl font-black text-white">{value}</span>
                 </div>
               ))}
             </div>
+          </div>
           </div>
         </section>
 

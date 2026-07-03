@@ -2,12 +2,12 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { Subject } from "@/types";
 
-const SUBJECT_STYLES: Record<string, { accent: string; bg: string }> = {
-  math: { accent: "text-indigo-700", bg: "bg-indigo-50" },
-  english: { accent: "text-emerald-700", bg: "bg-emerald-50" },
-  japanese: { accent: "text-rose-700", bg: "bg-rose-50" },
-  science: { accent: "text-amber-700", bg: "bg-amber-50" },
-  social: { accent: "text-violet-700", bg: "bg-violet-50" },
+const SUBJECT_STYLES: Record<string, { accent: string; bg: string; bar: string; hex: string }> = {
+  math: { accent: "text-blue-700", bg: "bg-blue-50", bar: "bg-blue-600", hex: "#2563eb" },
+  english: { accent: "text-emerald-700", bg: "bg-emerald-50", bar: "bg-emerald-600", hex: "#059669" },
+  japanese: { accent: "text-rose-700", bg: "bg-rose-50", bar: "bg-rose-600", hex: "#e11d48" },
+  science: { accent: "text-amber-700", bg: "bg-amber-50", bar: "bg-amber-500", hex: "#f59e0b" },
+  social: { accent: "text-violet-700", bg: "bg-violet-50", bar: "bg-violet-600", hex: "#7c3aed" },
 };
 
 type DashboardSubject = Subject & {
@@ -70,61 +70,53 @@ export default async function DashboardPage() {
     .sort((a, b) => b.rate - a.rate)[0];
 
   return (
-    <div className="space-y-6">
-      <section id="review" className="panel rounded-lg p-5 sm:p-6">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+    <div className="space-y-7">
+      <section id="review" className="study-hero rounded-lg p-5 sm:p-7">
+        <div className="hero-content grid gap-7 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
           <div>
-            <p className="text-sm font-bold text-indigo-700">Dashboard</p>
-            <h1 className="mt-2 text-2xl font-bold tracking-normal text-slate-950 sm:text-3xl">
-              今日の演習を選ぶ
-            </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-              中1・1学期中間範囲から10問ずつ出題します。間違えた問題は科目ページからまとめて解き直せます。
+            <p className="inline-flex rounded-md border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold text-cyan-100">
+              TESTAN STUDY BOARD
             </p>
-          </div>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:w-[520px]">
-            <div className="surface rounded-md p-3">
-              <div className="flex items-center justify-between gap-3 sm:block">
-                <p className="text-xs font-semibold text-slate-500">回答</p>
-                <p className="mt-0 text-xl font-bold text-slate-950 sm:mt-1">{totalAnswered}</p>
-              </div>
-            </div>
-            <div className="surface rounded-md p-3">
-              <div className="flex items-center justify-between gap-3 sm:block">
-                <p className="text-xs font-semibold text-slate-500">正答率</p>
-                <p className="mt-0 text-xl font-bold text-slate-950 sm:mt-1">{overallRate}%</p>
-              </div>
-            </div>
-            <div className="surface rounded-md p-3">
-              <div className="flex items-center justify-between gap-3 sm:block">
-                <p className="text-xs font-semibold text-slate-500">復習</p>
-                <p className="mt-0 text-xl font-bold text-slate-950 sm:mt-1">{wrongTotal}</p>
-              </div>
-            </div>
-            <div className="surface rounded-md p-3">
-              <div className="flex items-center justify-between gap-3 sm:block">
-                <p className="text-xs font-semibold text-slate-500">保存</p>
-                <p className="mt-0 text-xl font-bold text-slate-950 sm:mt-1">{bookmarkTotal}</p>
-              </div>
+            <h1 className="mt-5 max-w-2xl text-3xl font-black leading-tight text-white sm:text-4xl">
+              今日やるべき10問を、迷わず始める。
+            </h1>
+            <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300">
+              中1・1学期中間範囲を、4択・短答式・単元別・復習に分けて演習できます。履歴から弱点を見つけて、次の一手までつなげます。
+            </p>
+            <div className="mt-6 flex flex-wrap gap-2">
+              {["中1中間", "4択", "短答式", "単元別", "弱点復習"].map((label) => (
+                <span key={label} className="rounded-md border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold text-white">
+                  {label}
+                </span>
+              ))}
             </div>
           </div>
-        </div>
-        <div className="mt-5 flex flex-wrap gap-2 border-t border-slate-200 pt-4">
-          <span className="rounded-md bg-slate-950 px-3 py-1.5 text-xs font-bold text-white">
-            中1中間
-          </span>
-          <span className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600">
-            4択
-          </span>
-          <span className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600">
-            短答式
-          </span>
-          <span className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600">
-            単元別
-          </span>
-          <span className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600">
-            弱点復習
-          </span>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-2">
+            <div className="data-tile rounded-lg p-4">
+              <div>
+                <p className="text-xs font-semibold text-slate-300">回答</p>
+                <p className="mt-2 text-3xl font-black text-white">{totalAnswered}</p>
+              </div>
+            </div>
+            <div className="data-tile rounded-lg p-4">
+              <div>
+                <p className="text-xs font-semibold text-slate-300">正答率</p>
+                <p className="mt-2 text-3xl font-black text-white">{overallRate}%</p>
+              </div>
+            </div>
+            <div className="data-tile rounded-lg p-4">
+              <div>
+                <p className="text-xs font-semibold text-slate-300">復習</p>
+                <p className="mt-2 text-3xl font-black text-white">{wrongTotal}</p>
+              </div>
+            </div>
+            <div className="data-tile rounded-lg p-4">
+              <div>
+                <p className="text-xs font-semibold text-slate-300">保存</p>
+                <p className="mt-2 text-3xl font-black text-white">{bookmarkTotal}</p>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -132,9 +124,9 @@ export default async function DashboardPage() {
         <section className="grid gap-4 lg:grid-cols-3">
           <div className="panel rounded-lg p-5">
             <p className="text-sm font-semibold text-slate-500">学習状況</p>
-            <div className="mt-4 h-2 rounded-full bg-slate-100">
+            <div className="mt-4 h-3 rounded-full bg-slate-100">
               <div
-                className="h-2 rounded-full bg-indigo-600 shadow-sm"
+                className="h-3 rounded-full bg-blue-600 shadow-sm"
                 style={{ width: `${overallRate}%` }}
               />
             </div>
@@ -169,7 +161,7 @@ export default async function DashboardPage() {
                   <div key={day.answered_date} className="flex flex-1 flex-col items-center gap-2">
                     <div className="flex h-20 w-full items-end rounded-md bg-slate-50 px-1">
                       <div
-                        className="w-full rounded-sm bg-indigo-600"
+                className="w-full rounded-sm bg-blue-600"
                         style={{ height: `${height}%` }}
                         title={`${day.total}問 / ${rate}%`}
                       />
@@ -188,15 +180,18 @@ export default async function DashboardPage() {
       <section id="subjects" className="scroll-mt-24">
         <div className="mb-3 flex items-end justify-between">
           <div>
-            <h2 className="text-lg font-bold text-slate-950">科目</h2>
-            <p className="mt-1 text-sm text-slate-500">各教科60問からランダムに10問出題</p>
+            <p className="text-xs font-black text-blue-700">SUBJECTS</p>
+            <h2 className="mt-1 text-2xl font-black text-slate-950">教科を選ぶ</h2>
+            <p className="mt-1 text-sm text-slate-500">単元別・形式別・復習まで、この画面から入れます。</p>
           </div>
         </div>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {subjects.map((subject) => {
             const style = SUBJECT_STYLES[subject.name_en] ?? {
               accent: "text-slate-700",
               bg: "bg-slate-50",
+              bar: "bg-slate-700",
+              hex: "#334155",
             };
             const rate = subject.total ? subject.rate : null;
 
@@ -204,23 +199,35 @@ export default async function DashboardPage() {
               <Link
                 key={subject.id}
                 href={`/subjects/${subject.name_en}`}
-                className="group panel rounded-lg p-4 transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-white focus-ring"
+                className="subject-card group panel rounded-lg p-5 pl-6 transition hover:-translate-y-1 hover:border-slate-300 hover:bg-white focus-ring"
+                style={{ "--subject-accent": style.hex } as React.CSSProperties}
               >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <span className={`grid h-10 w-10 place-items-center rounded-md text-sm font-bold shadow-sm ${style.bg} ${style.accent}`}>
+                <div className="flex min-h-36 flex-col justify-between gap-5">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <span className={`grid h-12 w-12 place-items-center rounded-md text-base font-black shadow-sm ${style.bg} ${style.accent}`}>
                       {subject.icon}
+                      </span>
+                      <div>
+                        <h3 className="text-lg font-black text-slate-950">{subject.name}</h3>
+                        <p className="mt-1 text-xs font-bold text-slate-500">
+                          {rate === null ? "未演習" : `正答率 ${rate}%`}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="rounded-md bg-slate-950 px-2.5 py-1.5 text-xs font-bold text-white transition group-hover:bg-blue-600">
+                      開く
                     </span>
-                    <div>
-                      <h3 className="font-bold text-slate-950">{subject.name}</h3>
-                      <p className="mt-1 text-xs font-medium text-slate-500">
-                        {rate === null ? "未演習" : `正答率 ${rate}%`}
-                      </p>
+                  </div>
+                  <div>
+                    <div className="mb-2 flex items-center justify-between text-xs font-bold text-slate-500">
+                      <span>progress</span>
+                      <span>{rate ?? 0}%</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-slate-100">
+                      <div className={`h-2 rounded-full ${style.bar}`} style={{ width: `${rate ?? 0}%` }} />
                     </div>
                   </div>
-                  <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-bold text-slate-500 transition group-hover:bg-slate-900 group-hover:text-white">
-                    開く
-                  </span>
                 </div>
               </Link>
             );
