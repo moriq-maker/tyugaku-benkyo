@@ -39,6 +39,7 @@ export default async function QuizPage({
       .eq("user_id", user.id)
       .eq("subject_id", subject.id)
       .eq("grade", grade)
+      .eq("problem_format", problemFormat)
       .order("wrong_count", { ascending: false })
       .order("latest_wrong_at", { ascending: false })
       .limit(10);

@@ -62,6 +62,8 @@ export default function ResultPage() {
   const wrong = results.length - correct;
   const total = results.length;
   const rate = Math.round((correct / total) * 100);
+  const formatParam = problemFormat === "short_answer" ? "short_answer" : "multiple_choice";
+  const quizBasePath = `/quiz/${subject.name_en}?grade=${grade}&format=${formatParam}`;
 
   return (
     <div className="space-y-6">
@@ -83,14 +85,14 @@ export default function ResultPage() {
             <div className="mt-5 flex flex-col gap-2 sm:flex-row">
               {wrong > 0 && (
                 <Link
-                  href={`/quiz/${subject.name_en}?grade=${grade}&review=wrong`}
+                  href={`${quizBasePath}&review=wrong`}
                   className="rounded-md bg-red-600 px-4 py-2.5 text-center text-sm font-bold text-white transition hover:bg-red-700"
                 >
                   間違えた問題を解き直す
                 </Link>
               )}
               <Link
-                href={`/quiz/${subject.name_en}?grade=${grade}`}
+                href={quizBasePath}
                 className="rounded-md bg-slate-900 px-4 py-2.5 text-center text-sm font-bold text-white transition hover:bg-slate-700"
               >
                 同じ条件で10問
