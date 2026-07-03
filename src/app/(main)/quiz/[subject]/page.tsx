@@ -10,13 +10,14 @@ export default async function QuizPage({
   searchParams,
 }: {
   params: Promise<{ subject: string }>;
-  searchParams: Promise<{ grade?: string; review?: string; format?: string }>;
+  searchParams: Promise<{ grade?: string; review?: string; format?: string; category?: string }>;
 }) {
   const { subject: subjectEn } = await params;
-  const { grade: gradeParam, review, format } = await searchParams;
+  const { grade: gradeParam, review, format, category } = await searchParams;
   const grade = Number(gradeParam ?? 1);
   const mode = review === "wrong" ? "review" : review === "bookmarked" ? "bookmarked" : "normal";
   const problemFormat: ProblemFormat = format === "short_answer" ? "short_answer" : "multiple_choice";
+  const selectedCategory = category?.trim() || null;
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -40,6 +41,7 @@ export default async function QuizPage({
       .eq("subject_id", subject.id)
       .eq("grade", grade)
       .eq("problem_format", problemFormat)
+      .match(selectedCategory ? { category: selectedCategory } : {})
       .order("wrong_count", { ascending: false })
       .order("latest_wrong_at", { ascending: false })
       .limit(10);
@@ -78,6 +80,7 @@ export default async function QuizPage({
         .eq("subject_id", subject.id)
         .eq("grade", grade)
         .eq("problem_format", problemFormat)
+        .match(selectedCategory ? { category: selectedCategory } : {})
         .limit(10);
       problems = data;
     } else {
@@ -90,8 +93,9 @@ export default async function QuizPage({
       p_grade: grade,
       p_limit: 10,
       p_problem_format: problemFormat,
+      p_category: selectedCategory,
     });
-    if (error && problemFormat === "multiple_choice") {
+    if (error && problemFormat === "multiple_choice" && !selectedCategory) {
       const { data: fallbackData } = await supabase.rpc("get_random_problems", {
         p_subject_id: subject.id,
         p_grade: grade,
@@ -127,6 +131,7 @@ export default async function QuizPage({
       grade={grade}
       mode={mode}
       problemFormat={problemFormat}
+      category={selectedCategory}
       initialBookmarkedProblemIds={bookmarkedProblemIds}
     />
   );

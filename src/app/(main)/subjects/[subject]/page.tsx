@@ -21,10 +21,22 @@ type GradeSummary = {
   multiple_choice_count: number;
   short_answer_count: number;
   categories: string[];
+  category_summaries: CategorySummary[];
   wrong_count: number;
   wrong_multiple_choice_count: number;
   wrong_short_answer_count: number;
   bookmark_count: number;
+  bookmark_multiple_choice_count: number;
+  bookmark_short_answer_count: number;
+};
+
+type CategorySummary = {
+  category: string;
+  count: number;
+  multiple_choice_count: number;
+  short_answer_count: number;
+  wrong_multiple_choice_count: number;
+  wrong_short_answer_count: number;
   bookmark_multiple_choice_count: number;
   bookmark_short_answer_count: number;
 };
@@ -60,7 +72,6 @@ export default async function SubjectPage({
   const subject = summary.subject;
   const gradeGroups = summary.grades;
   const weakCategories = summary.weak_categories;
-  const supportsShortAnswer = subject.name_en === "japanese";
 
   return (
     <div className="space-y-6">
@@ -107,6 +118,7 @@ export default async function SubjectPage({
             wrong_short_answer_count,
             bookmark_multiple_choice_count,
             bookmark_short_answer_count,
+            category_summaries,
           } = gradeGroup;
           const multipleChoiceCount = multiple_choice_count ?? count;
           const shortAnswerCount = short_answer_count ?? 0;
@@ -117,6 +129,7 @@ export default async function SubjectPage({
           const enabled = count > 0;
           const hasMultipleChoice = multipleChoiceCount > 0;
           const hasShortAnswer = shortAnswerCount > 0;
+          const categorySummaries = category_summaries ?? [];
 
           return (
             <div
@@ -193,13 +206,94 @@ export default async function SubjectPage({
                       短答式10問
                     </Link>
                   )}
-                  {supportsShortAnswer && !hasShortAnswer && (
-                    <span className="rounded-md border border-slate-200 bg-slate-50 px-4 py-2.5 text-center text-sm font-bold text-slate-400">
-                      短答式はデータ反映待ち
-                    </span>
-                  )}
                 </div>
               </div>
+              {categorySummaries.length > 0 && (
+                <div className="mt-5 border-t border-slate-200 pt-5">
+                  <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-950">単元別モード</h3>
+                      <p className="mt-1 text-xs font-semibold text-slate-500">
+                        苦手な単元だけを選んで10問演習できます。
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-3 grid gap-3 lg:grid-cols-2">
+                    {categorySummaries.map((unit) => {
+                      const categoryParam = encodeURIComponent(unit.category);
+                      const unitMultipleChoiceCount = unit.multiple_choice_count ?? 0;
+                      const unitShortAnswerCount = unit.short_answer_count ?? 0;
+                      const unitWrongMultipleChoiceCount = unit.wrong_multiple_choice_count ?? 0;
+                      const unitWrongShortAnswerCount = unit.wrong_short_answer_count ?? 0;
+                      const unitBookmarkMultipleChoiceCount = unit.bookmark_multiple_choice_count ?? 0;
+                      const unitBookmarkShortAnswerCount = unit.bookmark_short_answer_count ?? 0;
+
+                      return (
+                        <div key={unit.category} className="rounded-md border border-slate-200 bg-slate-50 p-3">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="text-sm font-bold text-slate-900">{unit.category}</p>
+                              <p className="mt-1 text-xs font-semibold text-slate-500">
+                                {unit.count}問 / 4択{unitMultipleChoiceCount}・短答{unitShortAnswerCount}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {unitMultipleChoiceCount > 0 && (
+                              <Link
+                                href={`/quiz/${subjectEn}?grade=${grade}&format=multiple_choice&category=${categoryParam}`}
+                                className="rounded-md bg-slate-900 px-3 py-2 text-xs font-bold text-white transition hover:bg-slate-700"
+                              >
+                                4択
+                              </Link>
+                            )}
+                            {unitShortAnswerCount > 0 && (
+                              <Link
+                                href={`/quiz/${subjectEn}?grade=${grade}&format=short_answer&category=${categoryParam}`}
+                                className="rounded-md bg-indigo-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-indigo-700"
+                              >
+                                短答
+                              </Link>
+                            )}
+                            {unitWrongMultipleChoiceCount > 0 && (
+                              <Link
+                                href={`/quiz/${subjectEn}?grade=${grade}&format=multiple_choice&review=wrong&category=${categoryParam}`}
+                                className="rounded-md bg-red-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-red-700"
+                              >
+                                4択復習
+                              </Link>
+                            )}
+                            {unitWrongShortAnswerCount > 0 && (
+                              <Link
+                                href={`/quiz/${subjectEn}?grade=${grade}&format=short_answer&review=wrong&category=${categoryParam}`}
+                                className="rounded-md bg-red-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-red-700"
+                              >
+                                短答復習
+                              </Link>
+                            )}
+                            {unitBookmarkMultipleChoiceCount > 0 && (
+                              <Link
+                                href={`/quiz/${subjectEn}?grade=${grade}&format=multiple_choice&review=bookmarked&category=${categoryParam}`}
+                                className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800 transition hover:bg-amber-100"
+                              >
+                                4択保存
+                              </Link>
+                            )}
+                            {unitBookmarkShortAnswerCount > 0 && (
+                              <Link
+                                href={`/quiz/${subjectEn}?grade=${grade}&format=short_answer&review=bookmarked&category=${categoryParam}`}
+                                className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800 transition hover:bg-amber-100"
+                              >
+                                短答保存
+                              </Link>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           );
         })}

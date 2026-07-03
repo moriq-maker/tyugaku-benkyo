@@ -175,11 +175,15 @@ group by ua.user_id, ua.problem_id, p.subject_id, p.grade, p.category, p.problem
 having count(*) filter (where not ua.is_correct) > 0
   and (array_agg(ua.is_correct order by ua.answered_at desc))[1] = false;
 
+drop function if exists get_random_problems(uuid, int, int);
+drop function if exists get_random_problems(uuid, int, int, text);
+
 create or replace function get_random_problems(
   p_subject_id uuid,
   p_grade int,
   p_limit int default 10,
-  p_problem_format text default 'multiple_choice'
+  p_problem_format text default 'multiple_choice',
+  p_category text default null
 )
 returns setof problems
 language sql
@@ -192,6 +196,7 @@ as $$
   where subject_id = p_subject_id
     and grade = p_grade
     and problem_format = p_problem_format
+    and (p_category is null or category = p_category)
   order by random()
   limit p_limit;
 $$;
@@ -337,6 +342,42 @@ as $$
         ) categories
       ), '[]'::jsonb) as categories,
       coalesce((
+        select jsonb_agg(
+          jsonb_build_object(
+            'category', category,
+            'count', count,
+            'multiple_choice_count', multiple_choice_count,
+            'short_answer_count', short_answer_count,
+            'wrong_multiple_choice_count', wrong_multiple_choice_count,
+            'wrong_short_answer_count', wrong_short_answer_count,
+            'bookmark_multiple_choice_count', bookmark_multiple_choice_count,
+            'bookmark_short_answer_count', bookmark_short_answer_count
+          )
+          order by category
+        )
+        from (
+          select
+            p.category,
+            count(*)::int as count,
+            count(*) filter (where p.problem_format = 'multiple_choice')::int as multiple_choice_count,
+            count(*) filter (where p.problem_format = 'short_answer')::int as short_answer_count,
+            count(priority.problem_id) filter (where p.problem_format = 'multiple_choice')::int as wrong_multiple_choice_count,
+            count(priority.problem_id) filter (where p.problem_format = 'short_answer')::int as wrong_short_answer_count,
+            count(bookmark.problem_id) filter (where p.problem_format = 'multiple_choice')::int as bookmark_multiple_choice_count,
+            count(bookmark.problem_id) filter (where p.problem_format = 'short_answer')::int as bookmark_short_answer_count
+          from problems p
+          join selected_subject ss on ss.id = p.subject_id
+          left join user_problem_review_priority priority
+            on priority.problem_id = p.id
+            and priority.user_id = auth.uid()
+          left join user_bookmarks bookmark
+            on bookmark.problem_id = p.id
+            and bookmark.user_id = auth.uid()
+          where p.grade = gl.grade
+          group by p.category
+        ) category_rows
+      ), '[]'::jsonb) as category_summaries,
+      coalesce((
         select count(*)::int
         from user_problem_review_priority priority
         join selected_subject ss on ss.id = priority.subject_id
@@ -418,6 +459,7 @@ as $$
               'multiple_choice_count', multiple_choice_count,
               'short_answer_count', short_answer_count,
               'categories', categories,
+              'category_summaries', category_summaries,
               'wrong_count', wrong_count,
               'wrong_multiple_choice_count', wrong_multiple_choice_count,
               'wrong_short_answer_count', wrong_short_answer_count,
@@ -456,7 +498,7 @@ grant select on problem_grade_stats to anon, authenticated;
 grant select on user_answer_category_stats to authenticated;
 grant select on user_answer_daily_stats to authenticated;
 grant select on user_problem_review_priority to authenticated;
-grant execute on function get_random_problems(uuid, int, int, text) to anon, authenticated;
+grant execute on function get_random_problems(uuid, int, int, text, text) to anon, authenticated;
 grant execute on function get_dashboard_summary() to authenticated;
 grant execute on function get_subject_summary(text) to authenticated;
 

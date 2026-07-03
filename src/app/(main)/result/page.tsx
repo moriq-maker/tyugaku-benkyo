@@ -11,6 +11,7 @@ type StoredData = {
   grade: number;
   mode?: "normal" | "review" | "bookmarked";
   problemFormat?: "multiple_choice" | "short_answer";
+  category?: string | null;
 };
 
 const GRADE_LABELS: Record<number, string> = {
@@ -57,13 +58,14 @@ export default function ResultPage() {
     return <div className="py-20 text-center text-sm font-semibold text-slate-500">読み込み中...</div>;
   }
 
-  const { results, subject, grade, mode, problemFormat } = data;
+  const { results, subject, grade, mode, problemFormat, category } = data;
   const correct = results.filter((result) => result.isCorrect).length;
   const wrong = results.length - correct;
   const total = results.length;
   const rate = Math.round((correct / total) * 100);
   const formatParam = problemFormat === "short_answer" ? "short_answer" : "multiple_choice";
-  const quizBasePath = `/quiz/${subject.name_en}?grade=${grade}&format=${formatParam}`;
+  const categoryParam = category ? `&category=${encodeURIComponent(category)}` : "";
+  const quizBasePath = `/quiz/${subject.name_en}?grade=${grade}&format=${formatParam}${categoryParam}`;
 
   return (
     <div className="space-y-6">
@@ -78,6 +80,7 @@ export default function ResultPage() {
             <p className="text-sm font-semibold text-slate-500">
               {subject.name} / {GRADE_LABELS[grade]}
               {problemFormat === "short_answer" ? " / 短答式" : " / 4択"}
+              {category ? ` / ${category}` : ""}
               {mode === "review" ? " / 優先復習" : mode === "bookmarked" ? " / 保存問題" : ""}
             </p>
             <h1 className="mt-2 text-2xl font-bold text-slate-950">結果</h1>

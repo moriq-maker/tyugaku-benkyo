@@ -1,5 +1,5 @@
 -- 中学1年生 1学期中間テスト範囲（4月〜6月）用の初期データ
--- 対象: 5科目 / 中1のみ / 4択300問 + 短答式300問
+-- 対象: 5科目 / 中1のみ / 4択325問 + 短答式325問
 
 insert into subjects (name, name_en, icon, color) values
   ('数学', 'math', '数', '#6366f1'),
@@ -436,6 +436,103 @@ join (
   ('japanese', '短答・文法', null, '「空が青い。」の述語を答えなさい。', '青い', array['青い'], '「どうだ」にあたる「青い」が述語です。', 2),
   ('japanese', '短答・表現技法', null, '「風が歌う」のように、人でないものを人のように表す表現技法を答えなさい。', '擬人法', array['ぎじんほう','擬人法'], '人でないものを人のように表す技法は擬人法です。', 2),
   ('japanese', '短答・表現技法', null, '文末を名詞で止める表現技法を答えなさい。', '体言止め', array['体言止め','たいげんどめ'], '名詞で文を終える表現を体言止めといいます。', 2)
+) as v(subject_en, category, passage, question, correct_text, accepted_answers, explanation, difficulty)
+on s.name_en = v.subject_en;
+
+-- ========== 不足単元の補強: 各教科 4択5問 + 短答5問 ==========
+-- 国語: 文法・読解 / 英語: 本文読解 / 理科: 分類 / 社会: 時差・地形図 / 数学: 素因数分解・文字式計算
+
+insert into problems (
+  subject_id, grade, exam_term, category, passage, question,
+  choice_a, choice_b, choice_c, choice_d, answer, explanation, difficulty
+)
+select s.id, 1, '中1 1学期中間', v.category, v.passage, v.question,
+  v.choice_a, v.choice_b, v.choice_c, v.choice_d, v.answer, v.explanation, v.difficulty
+from subjects s
+join (
+  values
+  -- 数学: 素因数分解・文字式計算
+  ('math', '補強・素因数分解', null, '12を素因数分解したものとして正しいものはどれですか。', '2×6', '3×4', '2^2×3', '12×1', 'C', '12=2×2×3なので、素因数分解は2^2×3です。', 2),
+  ('math', '補強・素因数分解', null, '18を素因数分解したものとして正しいものはどれですか。', '2×9', '3×6', '2×3^2', '18×1', 'C', '18=2×3×3なので、2×3^2です。', 2),
+  ('math', '補強・文字式計算', null, '3x+2x を計算したものとして正しいものはどれですか。', '5x', '6x', '5x^2', 'x+5', 'A', '同じ文字の項は係数を足します。3x+2x=5xです。', 2),
+  ('math', '補強・文字式計算', null, '7a-4a を計算したものとして正しいものはどれですか。', '11a', '3a', '3', '28a', 'B', '同じ文字の項は係数を引きます。7a-4a=3aです。', 2),
+  ('math', '補強・文字式計算', null, '2(x+3) を展開したものとして正しいものはどれですか。', '2x+3', 'x+6', '2x+6', '2x+5', 'C', '分配法則で2をかっこの中の両方にかけます。2x+6です。', 2),
+
+  -- 英語: 本文読解
+  ('english', '補強・本文読解', 'I am Yui. I am from Tokyo. I like music.', '本文の内容に合うものはどれですか。', 'Yui is from Tokyo.', 'Yui is from Osaka.', 'Yui likes soccer.', 'Yui is a teacher.', 'A', '本文に I am from Tokyo. とあります。', 1),
+  ('english', '補強・本文読解', 'This is Ken. He has a dog. The dog is small.', 'Kenが飼っているものはどれですか。', 'a cat', 'a dog', 'a bird', 'a fish', 'B', '本文に He has a dog. とあります。', 1),
+  ('english', '補強・本文読解', 'I study English after school. I play tennis on Sunday.', '本文によると、日曜日にすることはどれですか。', 'study English', 'play tennis', 'read a book', 'watch TV', 'B', '本文に I play tennis on Sunday. とあります。', 1),
+  ('english', '補強・本文読解', 'My name is Taro. I have two brothers. We like baseball.', 'Taroには兄弟が何人いますか。', 'one', 'two', 'three', 'four', 'B', '本文に I have two brothers. とあります。', 1),
+  ('english', '補強・本文読解', 'This is my classroom. It is big and clean. I like it.', '教室の様子として正しいものはどれですか。', 'big and clean', 'small and old', 'new and red', 'dark and cold', 'A', '本文に It is big and clean. とあります。', 1),
+
+  -- 国語: 文法・読解
+  ('japanese', '補強・文法', null, '「私は毎朝、犬と散歩する。」の主語として正しいものはどれですか。', '私は', '毎朝', '犬と', '散歩する', 'A', '「何が」にあたる「私は」が主語です。', 1),
+  ('japanese', '補強・文法', null, '「赤い花が咲く。」で「赤い」が修飾している語はどれですか。', '赤い', '花', 'が', '咲く', 'B', '「赤い」は後ろの名詞「花」を詳しくしています。', 1),
+  ('japanese', '補強・文法', null, '「しかし」が表すつながりとして最も適切なものはどれですか。', '順接', '逆接', '並列', '説明', 'B', '「しかし」は前の内容と反対・対立する内容をつなぐ逆接です。', 2),
+  ('japanese', '補強・読解', '弟は転んで泣きそうになった。兄は何も言わずに手を差し出した。弟はその手を握って立ち上がった。', '兄がしたこととして正しいものはどれですか。', '弟を叱った', '手を差し出した', '走って帰った', '泣き出した', 'B', '本文に「手を差し出した」とあります。', 1),
+  ('japanese', '補強・読解', '朝から雨が降っていた。けれども、昼休みには雲が切れ、校庭に光が差した。', '本文で天気が変わった時間はいつですか。', '朝', '昼休み', '夕方', '夜', 'B', '昼休みに雲が切れたと書かれています。', 1),
+
+  -- 理科: 分類
+  ('science', '補強・生物の分類', null, 'アブラナやサクラのように、種子が子房に包まれている植物を何といいますか。', '裸子植物', '被子植物', 'シダ植物', 'コケ植物', 'B', '種子が子房に包まれている植物は被子植物です。', 2),
+  ('science', '補強・生物の分類', null, 'マツのように、胚珠がむき出しになっている植物を何といいますか。', '被子植物', '裸子植物', '単子葉類', '双子葉類', 'B', '胚珠がむき出しの植物は裸子植物です。', 2),
+  ('science', '補強・生物の分類', null, '根がひげ根で、葉脈が平行脈になりやすい植物のなかまはどれですか。', '双子葉類', '単子葉類', '裸子植物', 'シダ植物', 'B', '単子葉類はひげ根、平行脈が特徴です。', 2),
+  ('science', '補強・生物の分類', null, '魚類・両生類・は虫類・鳥類・哺乳類に共通する特徴はどれですか。', '背骨をもつ', '羽毛をもつ', '水中だけで生活する', '卵を産まない', 'A', 'これらはすべて背骨をもつセキツイ動物です。', 1),
+  ('science', '補強・生物の分類', null, '昆虫類の体の分かれ方として正しいものはどれですか。', '頭・胸・腹', '頭・腹', '胸・腹', '頭・胸・尾', 'A', '昆虫の体は頭・胸・腹の3つに分かれます。', 1),
+
+  -- 社会: 時差・地形図
+  ('social', '補強・時差', null, '日本の標準時子午線は東経135度です。経度15度で時差は何時間ですか。', '1時間', '2時間', '12時間', '24時間', 'A', '地球は24時間で360度回るので、15度で1時間の時差です。', 2),
+  ('social', '補強・時差', null, '東経135度の日本と東経120度の地域では、時差は何時間ですか。', '1時間', '2時間', '3時間', '15時間', 'A', '135度と120度の差は15度なので、時差は1時間です。', 2),
+  ('social', '補強・地形図', null, '地形図で等高線の間隔が狭い場所は、どのような地形ですか。', '傾きが急', '傾きがゆるやか', '必ず海岸', '必ず平地', 'A', '等高線の間隔が狭いほど傾きは急です。', 1),
+  ('social', '補強・地形図', null, '2万5千分の1の地形図で、地図上の1cmは実際の何mですか。', '25m', '250m', '2500m', '25km', 'B', '1cm×25000=25000cm=250mです。', 3),
+  ('social', '補強・地形図', null, '地図上で方位記号がない場合、ふつう上はどの方位ですか。', '北', '南', '東', '西', 'A', '特別な表示がなければ、地図の上は北です。', 1)
+) as v(subject_en, category, passage, question, choice_a, choice_b, choice_c, choice_d, answer, explanation, difficulty)
+on s.name_en = v.subject_en;
+
+insert into problems (
+  subject_id, grade, exam_term, category, passage, question,
+  choice_a, choice_b, choice_c, choice_d, answer,
+  problem_format, correct_text, accepted_answers, explanation, difficulty
+)
+select s.id, 1, '中1 1学期中間', v.category, v.passage, v.question,
+  '', '', '', '', 'A',
+  'short_answer', v.correct_text, v.accepted_answers, v.explanation, v.difficulty
+from subjects s
+join (
+  values
+  -- 数学: 素因数分解・文字式計算
+  ('math', '補強短答・素因数分解', null, '20を素因数分解しなさい。', '2^2×5', array['2^2×5','2²×5','2×2×5'], '20=2×2×5です。', 2),
+  ('math', '補強短答・素因数分解', null, '30を素因数分解しなさい。', '2×3×5', array['2×3×5','2*3*5'], '30=2×3×5です。', 2),
+  ('math', '補強短答・文字式計算', null, '4x+3x を計算しなさい。', '7x', array['7x'], '係数を足して7xです。', 2),
+  ('math', '補強短答・文字式計算', null, '9a-2a を計算しなさい。', '7a', array['7a'], '係数を引いて7aです。', 2),
+  ('math', '補強短答・文字式計算', null, '3(x+2) を展開しなさい。', '3x+6', array['3x+6'], '分配法則で3x+6です。', 2),
+
+  -- 英語: 本文読解
+  ('english', '補強短答・本文読解', 'I am Miki. I like tennis. I play tennis after school.', 'Mikiが好きなスポーツを英語で答えなさい。', 'tennis', array['tennis'], '本文に I like tennis. とあります。', 1),
+  ('english', '補強短答・本文読解', 'This is Tom. He is from Canada. He studies Japanese.', 'Tomの出身地を英語で答えなさい。', 'Canada', array['Canada','canada'], '本文に He is from Canada. とあります。', 1),
+  ('english', '補強短答・本文読解', 'I have a brother. His name is Kenta. He likes soccer.', 'Kentaが好きなものを英語で答えなさい。', 'soccer', array['soccer'], '本文に He likes soccer. とあります。', 1),
+  ('english', '補強短答・本文読解', 'My classroom is big. It has thirty desks.', '教室にある机の数を数字で答えなさい。', '30', array['30','thirty'], '本文に thirty desks とあります。', 1),
+  ('english', '補強短答・本文読解', 'I study math on Monday. I study English on Tuesday.', '火曜日に勉強する教科を英語で答えなさい。', 'English', array['English','english'], '本文に English on Tuesday とあります。', 1),
+
+  -- 国語: 文法・読解
+  ('japanese', '補強短答・文法', null, '「私は本を読む。」の主語を答えなさい。', '私は', array['私は','私'], '「何が」にあたる「私は」が主語です。', 1),
+  ('japanese', '補強短答・文法', null, '「私は本を読む。」の述語を答えなさい。', '読む', array['読む'], '「どうする」にあたる「読む」が述語です。', 1),
+  ('japanese', '補強短答・文法', null, '「だから」が表すつながりを、順接・逆接のどちらかで答えなさい。', '順接', array['順接'], '前の内容を理由にして後ろにつなぐので順接です。', 2),
+  ('japanese', '補強短答・読解', '空が急に暗くなった。私は急いで洗濯物を取り込んだ。', '「私」が急いで取り込んだものを答えなさい。', '洗濯物', array['洗濯物'], '本文に洗濯物を取り込んだとあります。', 1),
+  ('japanese', '補強短答・読解', '妹は初めての発表で緊張していた。発表が終わると、ほっとした顔で笑った。', '発表が終わったあと、妹はどんな顔で笑いましたか。', 'ほっとした顔', array['ほっとした顔','ほっとした'], '本文に「ほっとした顔で笑った」とあります。', 1),
+
+  -- 理科: 分類
+  ('science', '補強短答・生物の分類', null, '種子が子房に包まれている植物を何といいますか。', '被子植物', array['被子植物','ひし植物','ひししょくぶつ'], 'アブラナやサクラなどは被子植物です。', 2),
+  ('science', '補強短答・生物の分類', null, '胚珠がむき出しになっている植物を何といいますか。', '裸子植物', array['裸子植物','らし植物','らししょくぶつ'], 'マツなどは裸子植物です。', 2),
+  ('science', '補強短答・生物の分類', null, '単子葉類に多い、細い根が多数出る根を何といいますか。', 'ひげ根', array['ひげ根','ヒゲ根'], '単子葉類にはひげ根が多く見られます。', 2),
+  ('science', '補強短答・生物の分類', null, '背骨をもつ動物を何といいますか。', 'セキツイ動物', array['セキツイ動物','脊椎動物','せきつい動物'], '背骨をもつ動物です。', 1),
+  ('science', '補強短答・生物の分類', null, '昆虫の体は頭・胸・何に分かれますか。', '腹', array['腹','はら'], '昆虫の体は頭・胸・腹に分かれます。', 1),
+
+  -- 社会: 時差・地形図
+  ('social', '補強短答・時差', null, '経度何度で1時間の時差が生まれますか。数字で答えなさい。', '15', array['15','15度'], '360度を24時間で割ると15度です。', 2),
+  ('social', '補強短答・時差', null, '日本の標準時子午線は東経何度ですか。数字で答えなさい。', '135', array['135','135度','東経135度'], '日本標準時は東経135度を基準にします。', 1),
+  ('social', '補強短答・地形図', null, '地形図で同じ高さの地点を結んだ線を答えなさい。', '等高線', array['等高線','とうこうせん'], '等高線は同じ高さの地点を結んだ線です。', 1),
+  ('social', '補強短答・地形図', null, '2万5千分の1の地形図で、地図上1cmは実際の何mですか。数字で答えなさい。', '250', array['250','250m'], '25000cmは250mです。', 3),
+  ('social', '補強短答・地形図', null, '等高線の間隔が狭い場所は、傾きが急・ゆるやかのどちらですか。', '急', array['急','傾きが急'], '等高線の間隔が狭いほど急な斜面です。', 1)
 ) as v(subject_en, category, passage, question, correct_text, accepted_answers, explanation, difficulty)
 on s.name_en = v.subject_en;
 

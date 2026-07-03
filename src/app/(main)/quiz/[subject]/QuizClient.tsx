@@ -41,6 +41,7 @@ export default function QuizClient({
   grade,
   mode,
   problemFormat,
+  category,
   initialBookmarkedProblemIds,
 }: {
   subject: Subject;
@@ -48,6 +49,7 @@ export default function QuizClient({
   grade: number;
   mode: "normal" | "review" | "bookmarked";
   problemFormat: "multiple_choice" | "short_answer";
+  category: string | null;
   initialBookmarkedProblemIds: string[];
 }) {
   const router = useRouter();
@@ -167,6 +169,7 @@ export default function QuizClient({
           grade,
           mode,
           problemFormat,
+          category,
         })
       );
       router.push("/result");
@@ -177,7 +180,7 @@ export default function QuizClient({
     setCurrentIndex((index) => index + 1);
     setSelected(null);
     setShowAnswer(false);
-  }, [selected, current, results, isLastQuestion, subject, grade, mode, router, isShortAnswer, problemFormat]);
+  }, [selected, current, results, isLastQuestion, subject, grade, mode, router, isShortAnswer, problemFormat, category]);
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -192,6 +195,11 @@ export default function QuizClient({
           {mode === "review" ? "優先復習" : mode === "bookmarked" ? "ブックマーク" : problemFormat === "short_answer" ? "短答式" : "4択"}
         </span>
       </div>
+      {category && (
+        <div className="mb-4 rounded-md border border-indigo-100 bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-800">
+          単元: {category}
+        </div>
+      )}
 
       <section className="mb-4 rounded-lg border border-slate-200 bg-white p-4">
         <div className="mb-3 flex items-center justify-between text-sm">
