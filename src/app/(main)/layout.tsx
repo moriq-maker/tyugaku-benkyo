@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import Header from "@/components/Header";
+import BottomNav from "@/components/BottomNav";
 
 // ログイン済みユーザー向けレイアウト
 export default async function MainLayout({
@@ -18,11 +19,12 @@ export default async function MainLayout({
   }
 
   return (
-    <div className="min-h-screen bg-[#f4f6f8] flex flex-col">
+    <div className="app-shell flex min-h-screen flex-col">
       <Header email={user.email ?? ""} />
-      <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-5 sm:px-6 sm:py-7">
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-24 pt-5 sm:px-6 sm:py-7">
         {children}
       </main>
+      <BottomNav />
     </div>
   );
 }

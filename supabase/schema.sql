@@ -74,6 +74,7 @@ begin
 end $$;
 
 create index if not exists problems_subject_grade_term_idx on problems(subject_id, grade, exam_term);
+create index if not exists problems_subject_grade_format_category_idx on problems(subject_id, grade, problem_format, category);
 
 -- ユーザー回答履歴テーブル
 create table if not exists user_answers (
@@ -312,125 +313,119 @@ as $$
   grade_list as (
     select generate_series(1, 3) as grade
   ),
+  problem_rows as (
+    select p.id, p.subject_id, p.grade, p.category, p.problem_format
+    from problems p
+    join selected_subject ss on ss.id = p.subject_id
+  ),
+  problem_summary as (
+    select
+      grade,
+      count(*)::int as count,
+      count(*) filter (where problem_format = 'multiple_choice')::int as multiple_choice_count,
+      count(*) filter (where problem_format = 'short_answer')::int as short_answer_count
+    from problem_rows
+    group by grade
+  ),
+  category_names as (
+    select
+      grade,
+      jsonb_agg(category order by category) as categories
+    from (
+      select distinct grade, category
+      from problem_rows
+    ) distinct_categories
+    group by grade
+  ),
+  review_rows as (
+    select
+      priority.problem_id,
+      priority.grade,
+      priority.category,
+      priority.problem_format
+    from user_problem_review_priority priority
+    join selected_subject ss on ss.id = priority.subject_id
+    where priority.user_id = auth.uid()
+  ),
+  review_summary as (
+    select
+      grade,
+      count(*)::int as wrong_count,
+      count(*) filter (where problem_format = 'multiple_choice')::int as wrong_multiple_choice_count,
+      count(*) filter (where problem_format = 'short_answer')::int as wrong_short_answer_count
+    from review_rows
+    group by grade
+  ),
+  bookmark_rows as (
+    select p.id as problem_id, p.grade, p.category, p.problem_format
+    from user_bookmarks bookmark
+    join problem_rows p on p.id = bookmark.problem_id
+    where bookmark.user_id = auth.uid()
+  ),
+  bookmark_summary as (
+    select
+      grade,
+      count(*)::int as bookmark_count,
+      count(*) filter (where problem_format = 'multiple_choice')::int as bookmark_multiple_choice_count,
+      count(*) filter (where problem_format = 'short_answer')::int as bookmark_short_answer_count
+    from bookmark_rows
+    group by grade
+  ),
+  category_rows as (
+    select
+      p.grade,
+      p.category,
+      count(*)::int as count,
+      count(*) filter (where p.problem_format = 'multiple_choice')::int as multiple_choice_count,
+      count(*) filter (where p.problem_format = 'short_answer')::int as short_answer_count,
+      count(distinct r.problem_id) filter (where p.problem_format = 'multiple_choice')::int as wrong_multiple_choice_count,
+      count(distinct r.problem_id) filter (where p.problem_format = 'short_answer')::int as wrong_short_answer_count,
+      count(distinct b.problem_id) filter (where p.problem_format = 'multiple_choice')::int as bookmark_multiple_choice_count,
+      count(distinct b.problem_id) filter (where p.problem_format = 'short_answer')::int as bookmark_short_answer_count
+    from problem_rows p
+    left join review_rows r on r.problem_id = p.id
+    left join bookmark_rows b on b.problem_id = p.id
+    group by p.grade, p.category
+  ),
+  category_summaries as (
+    select
+      grade,
+      jsonb_agg(
+        jsonb_build_object(
+          'category', category,
+          'count', count,
+          'multiple_choice_count', multiple_choice_count,
+          'short_answer_count', short_answer_count,
+          'wrong_multiple_choice_count', wrong_multiple_choice_count,
+          'wrong_short_answer_count', wrong_short_answer_count,
+          'bookmark_multiple_choice_count', bookmark_multiple_choice_count,
+          'bookmark_short_answer_count', bookmark_short_answer_count
+        )
+        order by category
+      ) as category_summaries
+    from category_rows
+    group by grade
+  ),
   grade_rows as (
     select
       gl.grade,
-      coalesce(pgs.total, 0) as count,
-      coalesce((
-        select count(*)::int
-        from problems p
-        join selected_subject ss on ss.id = p.subject_id
-        where p.grade = gl.grade
-          and p.problem_format = 'multiple_choice'
-      ), 0) as multiple_choice_count,
-      coalesce((
-        select count(*)::int
-        from problems p
-        join selected_subject ss on ss.id = p.subject_id
-        where p.grade = gl.grade
-          and p.problem_format = 'short_answer'
-      ), 0) as short_answer_count,
-      coalesce((
-        select jsonb_agg(category order by category)
-        from (
-          select distinct p.category
-          from problems p
-          join selected_subject ss on ss.id = p.subject_id
-          where p.grade = gl.grade
-          order by p.category
-          limit 5
-        ) categories
-      ), '[]'::jsonb) as categories,
-      coalesce((
-        select jsonb_agg(
-          jsonb_build_object(
-            'category', category,
-            'count', count,
-            'multiple_choice_count', multiple_choice_count,
-            'short_answer_count', short_answer_count,
-            'wrong_multiple_choice_count', wrong_multiple_choice_count,
-            'wrong_short_answer_count', wrong_short_answer_count,
-            'bookmark_multiple_choice_count', bookmark_multiple_choice_count,
-            'bookmark_short_answer_count', bookmark_short_answer_count
-          )
-          order by category
-        )
-        from (
-          select
-            p.category,
-            count(*)::int as count,
-            count(*) filter (where p.problem_format = 'multiple_choice')::int as multiple_choice_count,
-            count(*) filter (where p.problem_format = 'short_answer')::int as short_answer_count,
-            count(priority.problem_id) filter (where p.problem_format = 'multiple_choice')::int as wrong_multiple_choice_count,
-            count(priority.problem_id) filter (where p.problem_format = 'short_answer')::int as wrong_short_answer_count,
-            count(bookmark.problem_id) filter (where p.problem_format = 'multiple_choice')::int as bookmark_multiple_choice_count,
-            count(bookmark.problem_id) filter (where p.problem_format = 'short_answer')::int as bookmark_short_answer_count
-          from problems p
-          join selected_subject ss on ss.id = p.subject_id
-          left join user_problem_review_priority priority
-            on priority.problem_id = p.id
-            and priority.user_id = auth.uid()
-          left join user_bookmarks bookmark
-            on bookmark.problem_id = p.id
-            and bookmark.user_id = auth.uid()
-          where p.grade = gl.grade
-          group by p.category
-        ) category_rows
-      ), '[]'::jsonb) as category_summaries,
-      coalesce((
-        select count(*)::int
-        from user_problem_review_priority priority
-        join selected_subject ss on ss.id = priority.subject_id
-        where priority.user_id = auth.uid()
-          and priority.grade = gl.grade
-      ), 0) as wrong_count,
-      coalesce((
-        select count(*)::int
-        from user_problem_review_priority priority
-        join selected_subject ss on ss.id = priority.subject_id
-        where priority.user_id = auth.uid()
-          and priority.grade = gl.grade
-          and priority.problem_format = 'multiple_choice'
-      ), 0) as wrong_multiple_choice_count,
-      coalesce((
-        select count(*)::int
-        from user_problem_review_priority priority
-        join selected_subject ss on ss.id = priority.subject_id
-        where priority.user_id = auth.uid()
-          and priority.grade = gl.grade
-          and priority.problem_format = 'short_answer'
-      ), 0) as wrong_short_answer_count,
-      coalesce((
-        select count(*)::int
-        from user_bookmarks bookmark
-        join problems p on p.id = bookmark.problem_id
-        join selected_subject ss on ss.id = p.subject_id
-        where bookmark.user_id = auth.uid()
-          and p.grade = gl.grade
-      ), 0) as bookmark_count,
-      coalesce((
-        select count(*)::int
-        from user_bookmarks bookmark
-        join problems p on p.id = bookmark.problem_id
-        join selected_subject ss on ss.id = p.subject_id
-        where bookmark.user_id = auth.uid()
-          and p.grade = gl.grade
-          and p.problem_format = 'multiple_choice'
-      ), 0) as bookmark_multiple_choice_count,
-      coalesce((
-        select count(*)::int
-        from user_bookmarks bookmark
-        join problems p on p.id = bookmark.problem_id
-        join selected_subject ss on ss.id = p.subject_id
-        where bookmark.user_id = auth.uid()
-          and p.grade = gl.grade
-          and p.problem_format = 'short_answer'
-      ), 0) as bookmark_short_answer_count
+      coalesce(ps.count, 0) as count,
+      coalesce(ps.multiple_choice_count, 0) as multiple_choice_count,
+      coalesce(ps.short_answer_count, 0) as short_answer_count,
+      coalesce(cn.categories, '[]'::jsonb) as categories,
+      coalesce(cs.category_summaries, '[]'::jsonb) as category_summaries,
+      coalesce(rs.wrong_count, 0) as wrong_count,
+      coalesce(rs.wrong_multiple_choice_count, 0) as wrong_multiple_choice_count,
+      coalesce(rs.wrong_short_answer_count, 0) as wrong_short_answer_count,
+      coalesce(bs.bookmark_count, 0) as bookmark_count,
+      coalesce(bs.bookmark_multiple_choice_count, 0) as bookmark_multiple_choice_count,
+      coalesce(bs.bookmark_short_answer_count, 0) as bookmark_short_answer_count
     from grade_list gl
-    left join selected_subject ss on true
-    left join problem_grade_stats pgs
-      on pgs.subject_id = ss.id
-      and pgs.grade = gl.grade
+    left join problem_summary ps on ps.grade = gl.grade
+    left join category_names cn on cn.grade = gl.grade
+    left join category_summaries cs on cs.grade = gl.grade
+    left join review_summary rs on rs.grade = gl.grade
+    left join bookmark_summary bs on bs.grade = gl.grade
   ),
   weak_categories as (
     select

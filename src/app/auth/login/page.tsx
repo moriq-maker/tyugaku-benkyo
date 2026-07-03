@@ -50,11 +50,11 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f4f6f8] px-4 py-6 sm:py-10">
+    <div className="app-shell min-h-screen px-4 py-6 sm:py-10">
       <div className="mx-auto grid max-w-5xl gap-8 lg:grid-cols-[1fr_420px] lg:items-center">
         <section className="hidden lg:block">
           <Link href="/" className="inline-flex items-center gap-3">
-            <span className="grid h-9 w-9 place-items-center rounded-md bg-slate-900 text-sm font-black text-white">T</span>
+            <span className="grid h-9 w-9 place-items-center rounded-md bg-slate-950 text-sm font-black text-white shadow-lg shadow-slate-900/20">T</span>
             <span className="font-bold text-slate-950">テスタン</span>
           </Link>
           <h1 className="mt-12 text-4xl font-bold leading-tight text-slate-950">
@@ -65,10 +65,10 @@ export default function LoginPage() {
           </p>
         </section>
 
-        <section className="rounded-lg border border-slate-200 bg-white p-5 sm:p-6">
+        <section className="panel p-5 sm:p-6">
           <div className="mb-6">
             <Link href="/" className="mb-6 inline-flex items-center gap-2 lg:hidden">
-              <span className="grid h-8 w-8 place-items-center rounded-md bg-slate-900 text-xs font-black text-white">T</span>
+              <span className="grid h-8 w-8 place-items-center rounded-md bg-slate-950 text-xs font-black text-white">T</span>
               <span className="font-bold text-slate-950">テスタン</span>
             </Link>
             <h2 className="text-2xl font-bold text-slate-950">ログイン</h2>
@@ -77,7 +77,7 @@ export default function LoginPage() {
 
           <button
             onClick={handleGoogleLogin}
-            className="flex w-full items-center justify-center gap-3 rounded-md border border-slate-300 bg-white py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+            className="focus-ring flex w-full items-center justify-center gap-3 rounded-md border border-slate-300 bg-white py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
           >
             <GoogleMark />
             Googleでログイン
@@ -102,7 +102,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full rounded-md border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none"
+                className="focus-ring w-full rounded-md border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none"
                 placeholder="example@email.com"
               />
             </div>
@@ -113,14 +113,14 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full rounded-md border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none"
+                className="focus-ring w-full rounded-md border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none"
                 placeholder="6文字以上"
               />
             </div>
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-md bg-slate-900 py-3 text-sm font-bold text-white transition hover:bg-slate-700 disabled:opacity-60"
+              className="focus-ring primary-action w-full rounded-md py-3 text-sm font-bold disabled:opacity-60"
             >
               {loading ? "ログイン中..." : "ログイン"}
             </button>

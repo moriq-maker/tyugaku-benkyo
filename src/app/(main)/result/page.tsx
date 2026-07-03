@@ -69,9 +69,9 @@ export default function ResultPage() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-lg border border-slate-200 bg-white p-5 sm:p-6">
+      <section className="panel p-5 sm:p-6">
         <div className="grid gap-6 md:grid-cols-[220px_1fr] md:items-center">
-          <div className="rounded-lg bg-slate-900 p-5 text-white">
+          <div className="rounded-lg bg-slate-950 p-5 text-white shadow-xl shadow-slate-900/20">
             <p className="text-sm font-semibold text-slate-300">Score</p>
             <p className="mt-2 text-5xl font-bold">{rate}%</p>
             <p className="mt-2 text-sm text-slate-300">{correct}/{total}問 正解</p>
@@ -89,20 +89,20 @@ export default function ResultPage() {
               {wrong > 0 && (
                 <Link
                   href={`${quizBasePath}&review=wrong`}
-                  className="rounded-md bg-red-600 px-4 py-2.5 text-center text-sm font-bold text-white transition hover:bg-red-700"
+                  className="focus-ring rounded-md bg-red-600 px-4 py-2.5 text-center text-sm font-bold text-white shadow-sm transition hover:bg-red-700"
                 >
                   間違えた問題を解き直す
                 </Link>
               )}
               <Link
                 href={quizBasePath}
-                className="rounded-md bg-slate-900 px-4 py-2.5 text-center text-sm font-bold text-white transition hover:bg-slate-700"
+                className="focus-ring primary-action rounded-md px-4 py-2.5 text-center text-sm font-bold"
               >
                 同じ条件で10問
               </Link>
               <Link
                 href="/dashboard"
-                className="rounded-md border border-slate-300 bg-white px-4 py-2.5 text-center text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+                className="focus-ring rounded-md border border-slate-300 bg-white px-4 py-2.5 text-center text-sm font-bold text-slate-700 transition hover:bg-slate-50"
               >
                 ダッシュボード
               </Link>
@@ -117,7 +117,7 @@ export default function ResultPage() {
           {results.map((result, index) => (
             <div
               key={result.problem.id}
-              className={`rounded-lg border bg-white p-4 ${
+              className={`panel p-4 ${
                 result.isCorrect ? "border-slate-200" : "border-red-200"
               }`}
             >
@@ -138,10 +138,10 @@ export default function ResultPage() {
                   </p>
                   {!result.isCorrect && (
                     <div className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
-                      <p className="rounded-md bg-red-50 px-3 py-2 text-red-800">
+                      <p className="rounded-md border border-red-100 bg-red-50 px-3 py-2 text-red-800">
                         あなた: {getChoice(result.problem, result.userAnswer)}
                       </p>
-                      <p className="rounded-md bg-emerald-50 px-3 py-2 text-emerald-800">
+                      <p className="rounded-md border border-emerald-100 bg-emerald-50 px-3 py-2 text-emerald-800">
                         正解: {result.problem.problem_format === "short_answer"
                           ? result.problem.correct_text
                           : getChoice(result.problem, result.problem.answer)}
@@ -149,7 +149,7 @@ export default function ResultPage() {
                     </div>
                   )}
                   {result.problem.explanation && (
-                    <p className="mt-3 rounded-md bg-slate-50 px-3 py-2 text-sm leading-6 text-slate-600">
+                    <p className="surface mt-3 px-3 py-2 text-sm leading-6 text-slate-600">
                       {result.problem.explanation}
                     </p>
                   )}

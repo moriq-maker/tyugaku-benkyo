@@ -3,21 +3,21 @@ import Link from "next/link";
 const stats = [
   ["対象", "中1・1学期中間"],
   ["科目", "5教科"],
-  ["問題", "300問"],
+  ["問題", "650問"],
 ];
 
 const flow = [
   ["01", "科目を選ぶ", "数学・英語・国語・理科・社会から、今日やる教科を選択。"],
-  ["02", "10問解く", "4択で回答し、すぐに正誤と解説を確認。"],
-  ["03", "解き直す", "間違えた問題だけを後からまとめて復習。"],
+  ["02", "形式を選ぶ", "4択・短答式・単元別から、その日の目的に合わせて演習。"],
+  ["03", "解き直す", "間違い・保存問題・弱点カテゴリを後からまとめて復習。"],
 ];
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-[#f4f6f8] text-slate-950">
+    <div className="app-shell min-h-screen text-slate-950">
       <header className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-4 sm:px-5 sm:py-5">
         <Link href="/" className="flex items-center gap-3">
-          <span className="grid h-9 w-9 place-items-center rounded-md bg-slate-900 text-sm font-black text-white">
+          <span className="grid h-9 w-9 place-items-center rounded-md bg-slate-950 text-sm font-black text-white shadow-lg shadow-slate-900/20">
             T
           </span>
           <span className="text-base font-bold">テスタン</span>
@@ -25,13 +25,13 @@ export default function LandingPage() {
         <div className="flex shrink-0 items-center gap-2">
           <Link
             href="/auth/login"
-            className="rounded-md px-2.5 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white sm:px-4"
+            className="focus-ring rounded-md px-2.5 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white sm:px-4"
           >
             ログイン
           </Link>
           <Link
             href="/auth/signup"
-            className="rounded-md bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 sm:px-4"
+            className="focus-ring primary-action rounded-md px-3 py-2 text-sm font-semibold sm:px-4"
           >
             <span className="sm:hidden">始める</span>
             <span className="hidden sm:inline">無料で始める</span>
@@ -55,20 +55,20 @@ export default function LandingPage() {
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/auth/signup"
-                className="rounded-md bg-slate-900 px-6 py-3 text-center text-sm font-bold text-white transition hover:bg-slate-700"
+                className="focus-ring primary-action rounded-md px-6 py-3 text-center text-sm font-bold"
               >
                 アカウントを作成
               </Link>
               <Link
                 href="/auth/login"
-                className="rounded-md border border-slate-300 bg-white px-6 py-3 text-center text-sm font-bold text-slate-800 transition hover:bg-slate-50"
+                className="focus-ring rounded-md border border-slate-300 bg-white px-6 py-3 text-center text-sm font-bold text-slate-800 transition hover:bg-slate-50"
               >
                 ログイン
               </Link>
             </div>
           </div>
 
-          <div className="rounded-lg border border-slate-200 bg-white p-5">
+          <div className="panel p-5">
             <p className="text-sm font-bold text-slate-500">現在の収録範囲</p>
             <div className="mt-4 divide-y divide-slate-100">
               {stats.map(([label, value]) => (
@@ -83,7 +83,7 @@ export default function LandingPage() {
 
         <section className="mt-16 grid gap-4 md:grid-cols-3">
           {flow.map(([step, title, body]) => (
-            <div key={step} className="rounded-lg border border-slate-200 bg-white p-5">
+            <div key={step} className="panel p-5 transition hover:-translate-y-0.5">
               <span className="text-xs font-bold text-indigo-600">{step}</span>
               <h2 className="mt-3 text-lg font-bold text-slate-950">{title}</h2>
               <p className="mt-2 text-sm leading-6 text-slate-600">{body}</p>

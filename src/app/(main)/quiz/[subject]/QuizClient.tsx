@@ -28,7 +28,7 @@ function isShortAnswerCorrect(problem: Problem, value: string): boolean {
 
 function Difficulty({ level }: { level: number }) {
   return (
-    <span className="rounded-md bg-amber-50 px-2 py-1 text-xs font-bold text-amber-700">
+    <span className="rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-xs font-bold text-amber-700">
       {"★".repeat(level)}
       {"☆".repeat(3 - level)}
     </span>
@@ -187,36 +187,36 @@ export default function QuizClient({
       <div className="mb-4 flex items-center justify-between gap-3">
         <Link
           href={`/subjects/${subject.name_en}`}
-          className="min-w-0 rounded-md px-2 py-1 text-sm font-semibold text-slate-600 transition hover:bg-white hover:text-slate-950"
+          className="focus-ring min-w-0 rounded-md px-2 py-1 text-sm font-semibold text-slate-600 transition hover:bg-white hover:text-slate-950"
         >
           <span className="truncate">← {subject.name}</span>
         </Link>
-        <span className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600">
+        <span className="rounded-md border border-slate-200 bg-white/85 px-3 py-1.5 text-xs font-bold text-slate-600 shadow-sm">
           {mode === "review" ? "優先復習" : mode === "bookmarked" ? "ブックマーク" : problemFormat === "short_answer" ? "短答式" : "4択"}
         </span>
       </div>
       {category && (
-        <div className="mb-4 rounded-md border border-indigo-100 bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-800">
+        <div className="mb-4 rounded-md border border-indigo-100 bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-800 shadow-sm">
           単元: {category}
         </div>
       )}
 
-      <section className="mb-4 rounded-lg border border-slate-200 bg-white p-4">
+      <section className="panel mb-4 p-4">
         <div className="mb-3 flex items-center justify-between text-sm">
           <span className="font-bold text-slate-950">
             {currentIndex + 1} / {problems.length}
           </span>
           <span className="font-semibold text-slate-500">{progress}%</span>
         </div>
-        <div className="h-2 rounded-full bg-slate-100">
+        <div className="h-2 rounded-full bg-slate-100 shadow-inner">
           <div
-            className="h-2 rounded-full bg-indigo-600 transition-all duration-300"
+            className="h-2 rounded-full bg-gradient-to-r from-indigo-600 to-cyan-500 transition-all duration-300"
             style={{ width: `${progress}%` }}
           />
         </div>
       </section>
 
-      <section className="rounded-lg border border-slate-200 bg-white">
+      <section className="panel overflow-hidden">
         <div className="border-b border-slate-200 p-5">
           <div className="mb-4 flex flex-wrap items-center gap-2">
             <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-bold text-slate-600">
@@ -227,7 +227,7 @@ export default function QuizClient({
               type="button"
               onClick={handleToggleBookmark}
               disabled={bookmarkSaving}
-              className={`ml-auto rounded-md border px-3 py-1 text-xs font-bold transition disabled:opacity-60 ${
+              className={`focus-ring ml-auto rounded-md border px-3 py-1 text-xs font-bold transition disabled:opacity-60 ${
                 bookmarkedIds.has(current.id)
                   ? "border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
                   : "border-slate-200 bg-white text-slate-600 hover:border-slate-400"
@@ -237,7 +237,7 @@ export default function QuizClient({
             </button>
           </div>
           {current.passage && (
-            <div className="mb-4 rounded-md border border-slate-200 bg-slate-50 p-4 text-sm leading-7 text-slate-700">
+            <div className="surface mb-4 p-4 text-sm leading-7 text-slate-700">
               {current.passage}
             </div>
           )}
@@ -257,7 +257,7 @@ export default function QuizClient({
                 }}
                 disabled={showAnswer}
                 placeholder="答えを入力"
-                className="w-full rounded-md border border-slate-300 bg-white px-4 py-3 text-base font-semibold text-slate-950 outline-none transition focus:border-slate-900 disabled:bg-slate-50"
+                className="focus-ring w-full rounded-md border border-slate-300 bg-white px-4 py-3 text-base font-semibold text-slate-950 outline-none transition focus:border-slate-900 disabled:bg-slate-50"
               />
               {showAnswer && (
                 <div
@@ -279,7 +279,7 @@ export default function QuizClient({
               const isCorrect = choice === current.answer;
               const isSelected = choice === selected;
 
-              let choiceStyle = "border-slate-200 bg-white text-slate-800 hover:border-slate-400";
+              let choiceStyle = "border-slate-200 bg-white text-slate-800 hover:-translate-y-0.5 hover:border-slate-400 hover:shadow-md";
               if (showAnswer) {
                 if (isCorrect) choiceStyle = "border-emerald-500 bg-emerald-50 text-emerald-900";
                 else if (isSelected) choiceStyle = "border-red-500 bg-red-50 text-red-900";
@@ -291,9 +291,9 @@ export default function QuizClient({
                   key={choice}
                   onClick={() => handleSelect(choice)}
                   disabled={showAnswer}
-                  className={`flex w-full items-start gap-3 rounded-md border px-4 py-3 text-left transition ${choiceStyle}`}
+                  className={`focus-ring flex w-full items-start gap-3 rounded-md border px-4 py-3 text-left transition ${choiceStyle}`}
                 >
-                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-white text-sm font-bold text-slate-700">
+                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md border border-slate-200 bg-white text-sm font-bold text-slate-700">
                     {choice}
                   </span>
                   <span className="min-w-0 flex-1 text-sm font-semibold leading-6">{text}</span>
@@ -307,17 +307,17 @@ export default function QuizClient({
       </section>
 
       {showAnswer && current.explanation && (
-        <section className="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-4">
+        <section className="mt-4 rounded-lg border border-blue-200 bg-blue-50/90 p-4 shadow-sm">
           <p className="text-sm font-bold text-blue-900">解説</p>
           <p className="mt-2 text-sm leading-6 text-blue-900">{current.explanation}</p>
         </section>
       )}
 
-      <div className="sticky bottom-0 mt-4 border-t border-slate-200 bg-[#f4f6f8]/95 py-3 backdrop-blur">
+      <div className="sticky bottom-0 mt-4 border-t border-slate-200 bg-[#f5f7fb]/92 py-3 backdrop-blur">
         <button
           onClick={showAnswer ? handleNext : isShortAnswer ? handleCheckShortAnswer : undefined}
           disabled={saving || !selected?.trim()}
-          className="mt-4 w-full rounded-md bg-slate-900 py-3 text-sm font-bold text-white transition hover:bg-slate-700 disabled:opacity-60"
+          className="focus-ring primary-action mt-4 w-full rounded-md py-3 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-60"
         >
           {saving
             ? "保存中..."
