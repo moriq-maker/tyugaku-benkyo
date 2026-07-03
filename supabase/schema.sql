@@ -49,6 +49,30 @@ begin
   end if;
 end $$;
 
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'problems_multiple_choice_unique_choices_check'
+  ) then
+    alter table problems
+      add constraint problems_multiple_choice_unique_choices_check
+      check (
+        problem_format <> 'multiple_choice'
+        or (
+          choice_a <> choice_b
+          and choice_a <> choice_c
+          and choice_a <> choice_d
+          and choice_b <> choice_c
+          and choice_b <> choice_d
+          and choice_c <> choice_d
+        )
+      )
+      not valid;
+  end if;
+end $$;
+
 create index if not exists problems_subject_grade_term_idx on problems(subject_id, grade, exam_term);
 
 -- ユーザー回答履歴テーブル
