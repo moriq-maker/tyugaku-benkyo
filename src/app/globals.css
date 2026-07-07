@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --background: #eef2f7;
+  --background: #ffffff;
   --foreground: #111827;
 }
 
@@ -10,78 +10,52 @@
   --color-foreground: var(--foreground);
 }
 
+/* ── ベース ── */
+
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Hiragino Sans",
+  font-family:
+    "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Hiragino Sans",
     Meiryo, sans-serif;
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
 }
 
-html {
-  scroll-behavior: smooth;
-}
+html { scroll-behavior: smooth; }
 
-button,
-a,
-input {
-  -webkit-tap-highlight-color: transparent;
-}
+button, a, input { -webkit-tap-highlight-color: transparent; }
 
-::selection {
-  background: #c7d2fe;
-  color: #111827;
-}
+::selection { background: #dbeafe; color: #1e3a8a; }
+
+/* ── アプリシェル ── */
 
 .app-shell {
-  background:
-    linear-gradient(90deg, rgba(15, 23, 42, 0.035) 1px, transparent 1px),
-    linear-gradient(180deg, rgba(15, 23, 42, 0.035) 1px, transparent 1px),
-    linear-gradient(180deg, #f8fafc 0%, #eef2f7 45%, #e8edf5 100%);
-  background-size: 32px 32px, 32px 32px, auto;
+  background-color: #f9fafb;
 }
+
+/* ── パネル ── */
 
 .panel {
-  border: 1px solid rgba(15, 23, 42, 0.1);
-  background: rgba(255, 255, 255, 0.94);
-  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.08);
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
 }
+
+/* ── サーフェス ── */
 
 .surface {
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  background: #f8fafc;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
 }
 
-.primary-action {
-  background: linear-gradient(135deg, #0f172a 0%, #2563eb 58%, #0891b2 100%);
-  color: white;
-  box-shadow: 0 12px 24px rgba(37, 99, 235, 0.24);
-}
-
-.primary-action:hover {
-  background: linear-gradient(135deg, #020617 0%, #1d4ed8 58%, #0e7490 100%);
-}
+/* ── ヒーロー（ダーク背景セクション）── */
 
 .study-hero {
+  background-color: #111827;
   position: relative;
   overflow: hidden;
-  border: 1px solid rgba(15, 23, 42, 0.12);
-  background:
-    linear-gradient(135deg, rgba(15, 23, 42, 0.97) 0%, rgba(30, 41, 59, 0.97) 46%, rgba(8, 47, 73, 0.96) 100%);
-  color: white;
-  box-shadow: 0 22px 60px rgba(15, 23, 42, 0.22);
-}
-
-.study-hero::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
-  background-size: 42px 42px;
-  mask-image: linear-gradient(90deg, transparent 0%, black 32%, black 100%);
 }
 
 .hero-content {
@@ -89,17 +63,48 @@ input {
   z-index: 1;
 }
 
+/* ── データタイル ── */
+
 .data-tile {
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.08);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
 }
 
-.mode-pill {
-  border: 1px solid rgba(15, 23, 42, 0.1);
-  background: white;
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+/* ── フォーカスリング ── */
+
+.focus-ring { outline: none; }
+
+.focus-ring:focus-visible {
+  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #2563eb;
 }
+
+/* ── プライマリアクション ── */
+
+.primary-action {
+  background-color: #111827;
+  color: #ffffff;
+  transition: background-color 150ms ease;
+}
+
+.primary-action:hover  { background-color: #1f2937; }
+.primary-action:active { background-color: #374151; }
+
+/* ── ゲームカード ── */
+
+.game-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  transition: box-shadow 200ms ease, transform 200ms ease;
+}
+
+.game-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+/* ── 教科カード（左ボーダーアクセント）── */
 
 .subject-card {
   position: relative;
@@ -110,14 +115,108 @@ input {
   content: "";
   position: absolute;
   inset: 0 auto 0 0;
-  width: 5px;
-  background: var(--subject-accent, #2563eb);
+  width: 3px;
+  background: var(--subject-accent, #374151);
+  border-radius: 3px 0 0 3px;
 }
 
-.focus-ring {
-  outline: none;
+/* ── XPバー ── */
+
+.xp-track {
+  height: 5px;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
 }
 
-.focus-ring:focus-visible {
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+.xp-fill {
+  height: 100%;
+  width: var(--xp-pct, 0%);
+  border-radius: 999px;
+  background: #93c5fd;
+  transition: width 1s cubic-bezier(0.22, 1, 0.36, 1);
 }
+
+/* ── プログレスバー ── */
+
+.progress-bar-fill {
+  height: 100%;
+  border-radius: inherit;
+  animation: bar-grow 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 0.25s;
+}
+
+@keyframes bar-grow {
+  from { width: 0%; }
+  to   { width: var(--bar-w, 0%); }
+}
+
+/* ── ストリークバッジ ── */
+
+.streak-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(251, 191, 36, 0.12);
+  border: 1px solid rgba(251, 191, 36, 0.28);
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fbbf24;
+}
+
+/* ── モードピル ── */
+
+.mode-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  padding: 8px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  transition: border-color 150ms ease, background-color 150ms ease, color 150ms ease;
+}
+
+.mode-pill:hover {
+  border-color: #bfdbfe;
+  background-color: #eff6ff;
+  color: #1d4ed8;
+}
+
+/* ── アニメーション ── */
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes pop-in {
+  0%   { opacity: 0; transform: scale(0.94); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.animate-slide-up { animation: slide-up 0.3s ease both; }
+.animate-fade-in  { animation: fade-in  0.3s ease both; }
+.animate-pop-in   { animation: pop-in   0.35s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+.delay-100  { animation-delay:  100ms; }
+.delay-200  { animation-delay:  200ms; }
+.delay-300  { animation-delay:  300ms; }
+.delay-400  { animation-delay:  400ms; }
+.delay-500  { animation-delay:  500ms; }
+.delay-700  { animation-delay:  700ms; }
+.delay-1000 { animation-delay: 1000ms; }
+.delay-1500 { animation-delay: 1500ms; }
+.delay-2000 { animation-delay: 2000ms; }
+.delay-2500 { animation-delay: 2500ms; }
+.delay-3000 { animation-delay: 3000ms; }

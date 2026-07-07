@@ -327,7 +327,7 @@ export default function QuizClient({
         </section>
       )}
 
-      <div className="sticky bottom-0 ml-auto mt-4 max-w-3xl border-t border-slate-200 bg-[#eef2f7]/92 py-3 backdrop-blur">
+      <div className="sticky bottom-0 ml-auto mt-4 max-w-3xl border-t border-slate-200/60 bg-white/95 py-3 backdrop-blur-xl">
         <button
           onClick={showAnswer ? handleNext : isShortAnswer ? handleCheckShortAnswer : undefined}
           disabled={saving || !selected?.trim()}

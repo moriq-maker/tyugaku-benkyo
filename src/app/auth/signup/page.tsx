@@ -16,11 +16,11 @@ function GoogleMark() {
 }
 
 export default function SignupPage() {
-  const [email, setEmail] = useState("");
+  const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [done, setDone] = useState(false);
+  const [error, setError]       = useState("");
+  const [loading, setLoading]   = useState(false);
+  const [done, setDone]         = useState(false);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,22 +30,17 @@ export default function SignupPage() {
     }
     setLoading(true);
     setError("");
-
     const supabase = createClient();
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
     });
-
     if (error) {
       setError("登録に失敗しました。しばらくしてからもう一度お試しください。");
       setLoading(false);
       return;
     }
-
     setDone(true);
   };
 
@@ -59,21 +54,24 @@ export default function SignupPage() {
 
   if (done) {
     return (
-      <div className="app-shell min-h-screen px-4 py-6 sm:py-10">
-        <div className="panel mx-auto max-w-md p-6">
-          <Link href="/" className="inline-flex items-center gap-2">
-            <span className="grid h-8 w-8 place-items-center rounded-md bg-slate-950 text-xs font-black text-white">T</span>
-            <span className="font-bold text-slate-950">テスタン</span>
-          </Link>
-          <h1 className="mt-8 text-2xl font-bold text-slate-950">確認メールを送信しました</h1>
-          <p className="mt-3 text-sm leading-7 text-slate-600">
-            <strong>{email}</strong> に登録確認メールを送りました。メール内のリンクから登録を完了してください。
+      <div className="app-shell flex min-h-screen items-center justify-center px-4 py-10">
+        <div className="panel mx-auto max-w-md p-8 text-center animate-pop-in">
+          <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100">
+            <svg className="h-7 w-7 text-slate-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <rect width="20" height="16" x="2" y="4" rx="2" />
+              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-black text-slate-900">確認メールを送信しました</h1>
+          <p className="mt-3 text-sm leading-7 text-slate-500">
+            <strong className="text-slate-700">{email}</strong> に確認メールを送りました。
+            メール内のリンクから登録を完了してください。
           </p>
           <Link
             href="/auth/login"
-            className="focus-ring primary-action mt-6 inline-flex rounded-md px-4 py-2.5 text-sm font-bold"
+            className="focus-ring primary-action mt-6 inline-flex rounded-xl px-6 py-3 text-sm font-bold"
           >
-            ログインへ
+            ログインへ →
           </Link>
         </div>
       </div>
@@ -81,89 +79,123 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="app-shell min-h-screen px-4 py-6 sm:py-10">
-      <div className="mx-auto grid max-w-5xl gap-8 lg:grid-cols-[1fr_420px] lg:items-center">
-        <section className="hidden lg:block">
-          <Link href="/" className="inline-flex items-center gap-3">
-            <span className="grid h-9 w-9 place-items-center rounded-md bg-slate-950 text-sm font-black text-white shadow-lg shadow-slate-900/20">T</span>
-            <span className="font-bold text-slate-950">テスタン</span>
-          </Link>
-          <h1 className="mt-12 text-4xl font-bold leading-tight text-slate-950">
-            まずは1科目10問から。
-          </h1>
-          <p className="mt-4 max-w-lg text-sm leading-7 text-slate-600">
-            アカウントを作成すると、回答履歴と間違えた問題が保存されます。テスト前の復習を短い単位で回せます。
-          </p>
-        </section>
+    <div className="app-shell min-h-screen">
+      <div className="mx-auto grid min-h-screen max-w-5xl lg:grid-cols-[1fr_420px]">
 
-        <section className="panel p-5 sm:p-6">
-          <div className="mb-6">
-            <Link href="/" className="mb-6 inline-flex items-center gap-2 lg:hidden">
-              <span className="grid h-8 w-8 place-items-center rounded-md bg-slate-950 text-xs font-black text-white">T</span>
-              <span className="font-bold text-slate-950">テスタン</span>
+        {/* ── 左：ブランドパネル ── */}
+        <div className="study-hero relative hidden p-10 lg:flex lg:flex-col lg:justify-between">
+          <div className="hero-content">
+            <Link href="/" className="inline-flex items-center gap-2.5 focus-ring rounded-lg">
+              <span className="grid h-9 w-9 place-items-center rounded-lg bg-white/12 text-sm font-black text-white border border-white/12">
+                T
+              </span>
+              <span className="text-base font-black text-white">テスタン</span>
             </Link>
-            <h2 className="text-2xl font-bold text-slate-950">新規登録</h2>
-            <p className="mt-1 text-sm text-slate-500">回答履歴を残して学習を始めます。</p>
+
+            <h1 className="mt-14 text-3xl font-black leading-snug text-white">
+              まずは1科目、<br />10問から始めよう。
+            </h1>
+            <p className="mt-5 max-w-sm text-sm leading-7 text-slate-400">
+              アカウントを作成すると、回答履歴と間違えた問題が保存されます。テスト前の復習を短い単位で繰り返せます。
+            </p>
+
+            <ul className="mt-8 space-y-3">
+              {[
+                "全問題に無料でアクセス",
+                "弱点を自動で記録",
+                "間違い問題の解き直し",
+              ].map((t) => (
+                <li key={t} className="flex items-center gap-2.5 text-sm font-semibold text-slate-300">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs text-white">✓</span>
+                  {t}
+                </li>
+              ))}
+            </ul>
           </div>
 
-          <button
-            onClick={handleGoogleLogin}
-            className="focus-ring flex w-full items-center justify-center gap-3 rounded-md border border-slate-300 bg-white py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
-          >
-            <GoogleMark />
-            Googleで登録
-          </button>
-
-          <div className="my-5 flex items-center gap-3">
-            <hr className="flex-1 border-slate-200" />
-            <span className="text-xs font-semibold text-slate-400">または</span>
-            <hr className="flex-1 border-slate-200" />
-          </div>
-
-          <form onSubmit={handleSignup} className="space-y-4">
-            {error && (
-              <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700">
-                {error}
-              </div>
-            )}
-            <div>
-              <label className="mb-1 block text-sm font-semibold text-slate-700">メールアドレス</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="focus-ring w-full rounded-md border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none"
-                placeholder="example@email.com"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-semibold text-slate-700">パスワード</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="focus-ring w-full rounded-md border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none"
-                placeholder="6文字以上"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="focus-ring primary-action w-full rounded-md py-3 text-sm font-bold disabled:opacity-60"
+          <div className="hero-content">
+            <p className="text-sm font-semibold text-slate-500">すでにアカウントをお持ちの方は</p>
+            <Link
+              href="/auth/login"
+              className="focus-ring mt-2 inline-flex rounded-lg border border-white/15 bg-white/8 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/15"
             >
-              {loading ? "登録中..." : "アカウントを作成"}
-            </button>
-          </form>
-
-          <p className="mt-5 text-center text-sm text-slate-600">
-            すでにアカウントがある場合は{" "}
-            <Link href="/auth/login" className="font-bold text-indigo-700 hover:underline">
-              ログイン
+              ログイン →
             </Link>
-          </p>
-        </section>
+          </div>
+        </div>
+
+        {/* ── 右：フォーム ── */}
+        <div className="flex flex-col justify-center px-6 py-10 sm:px-8">
+          {/* モバイルロゴ */}
+          <Link href="/" className="mb-8 inline-flex items-center gap-2.5 focus-ring rounded-lg lg:hidden">
+            <span className="grid h-9 w-9 place-items-center rounded-lg bg-slate-950 text-sm font-black text-white">T</span>
+            <span className="text-base font-black text-slate-900">テスタン</span>
+          </Link>
+
+          <div className="panel p-6 sm:p-8">
+            <h2 className="text-2xl font-black text-slate-900">新規登録</h2>
+            <p className="mt-1 text-sm text-slate-500">30秒で無料アカウントを作成。</p>
+
+            <button
+              onClick={handleGoogleLogin}
+              className="focus-ring mt-6 flex w-full items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+            >
+              <GoogleMark />
+              Googleで登録
+            </button>
+
+            <div className="my-5 flex items-center gap-3">
+              <hr className="flex-1 border-slate-200" />
+              <span className="text-xs font-semibold text-slate-400">または</span>
+              <hr className="flex-1 border-slate-200" />
+            </div>
+
+            <form onSubmit={handleSignup} className="space-y-4">
+              {error && (
+                <div className="rounded-xl border border-red-200 bg-red-50 p-3.5 text-sm font-semibold text-red-700">
+                  {error}
+                </div>
+              )}
+              <div>
+                <label className="mb-1.5 block text-sm font-bold text-slate-700">メールアドレス</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  placeholder="example@email.com"
+                  className="focus-ring w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 transition focus:border-blue-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-bold text-slate-700">パスワード</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  placeholder="6文字以上"
+                  className="focus-ring w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 transition focus:border-blue-500 focus:outline-none"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="focus-ring primary-action w-full rounded-xl py-3 text-sm font-black disabled:opacity-60"
+              >
+                {loading ? "登録中…" : "アカウントを作成 →"}
+              </button>
+            </form>
+
+            <p className="mt-5 text-center text-sm text-slate-500">
+              すでにアカウントがある場合は{" "}
+              <Link href="/auth/login" className="font-black text-slate-900 underline underline-offset-2 hover:no-underline">
+                ログイン
+              </Link>
+            </p>
+          </div>
+        </div>
+
       </div>
     </div>
   );

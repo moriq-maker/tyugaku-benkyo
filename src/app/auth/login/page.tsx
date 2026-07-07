@@ -18,25 +18,22 @@ function GoogleMark() {
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [error, setError]       = useState("");
+  const [loading, setLoading]   = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
-
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-
     if (error) {
       setError("メールアドレスまたはパスワードが正しくありません");
       setLoading(false);
       return;
     }
-
     router.push("/dashboard");
     router.refresh();
   };
@@ -50,89 +47,111 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="app-shell min-h-screen px-4 py-6 sm:py-10">
-      <div className="mx-auto grid max-w-5xl gap-8 lg:grid-cols-[1fr_420px] lg:items-center">
-        <section className="hidden lg:block">
-          <Link href="/" className="inline-flex items-center gap-3">
-            <span className="grid h-9 w-9 place-items-center rounded-md bg-slate-950 text-sm font-black text-white shadow-lg shadow-slate-900/20">T</span>
-            <span className="font-bold text-slate-950">テスタン</span>
+    <div className="app-shell min-h-screen">
+      <div className="mx-auto grid min-h-screen max-w-5xl lg:grid-cols-[1fr_420px]">
+
+        {/* ── 左：ブランドパネル ── */}
+        <div className="study-hero relative hidden p-10 lg:flex lg:flex-col lg:justify-between">
+          <div className="hero-content">
+            <Link href="/" className="inline-flex items-center gap-2.5 focus-ring rounded-lg">
+              <span className="grid h-9 w-9 place-items-center rounded-lg bg-white/12 text-sm font-black text-white border border-white/12">
+                T
+              </span>
+              <span className="text-base font-black text-white">テスタン</span>
+            </Link>
+
+            <h1 className="mt-14 text-3xl font-black leading-snug text-white">
+              学習履歴を残して、<br />次の復習につなげる。
+            </h1>
+            <p className="mt-5 max-w-sm text-sm leading-7 text-slate-400">
+              ログインすると、回答履歴と間違えた問題の解き直しが使えます。連続学習記録も積み上がります。
+            </p>
+          </div>
+
+          <div className="hero-content">
+            <div className="grid grid-cols-3 gap-3">
+              {[["650問", "収録問題"], ["5教科", "対応科目"], ["無料", "完全無料"]].map(([v, l]) => (
+                <div key={l} className="data-tile p-4 text-center">
+                  <p className="text-xl font-black text-white">{v}</p>
+                  <p className="mt-1 text-xs font-medium text-slate-500">{l}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* ── 右：フォーム ── */}
+        <div className="flex flex-col justify-center px-6 py-10 sm:px-8">
+          {/* モバイルロゴ */}
+          <Link href="/" className="mb-8 inline-flex items-center gap-2.5 focus-ring rounded-lg lg:hidden">
+            <span className="grid h-9 w-9 place-items-center rounded-lg bg-slate-950 text-sm font-black text-white">T</span>
+            <span className="text-base font-black text-slate-900">テスタン</span>
           </Link>
-          <h1 className="mt-12 text-4xl font-bold leading-tight text-slate-950">
-            学習履歴を残して、次の復習につなげる。
-          </h1>
-          <p className="mt-4 max-w-lg text-sm leading-7 text-slate-600">
-            ログインすると、回答履歴と間違えた問題の解き直しが使えます。
-          </p>
-        </section>
 
-        <section className="panel p-5 sm:p-6">
-          <div className="mb-6">
-            <Link href="/" className="mb-6 inline-flex items-center gap-2 lg:hidden">
-              <span className="grid h-8 w-8 place-items-center rounded-md bg-slate-950 text-xs font-black text-white">T</span>
-              <span className="font-bold text-slate-950">テスタン</span>
-            </Link>
-            <h2 className="text-2xl font-bold text-slate-950">ログイン</h2>
+          <div className="panel p-6 sm:p-8">
+            <h2 className="text-2xl font-black text-slate-900">ログイン</h2>
             <p className="mt-1 text-sm text-slate-500">学習を続きから再開します。</p>
-          </div>
 
-          <button
-            onClick={handleGoogleLogin}
-            className="focus-ring flex w-full items-center justify-center gap-3 rounded-md border border-slate-300 bg-white py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
-          >
-            <GoogleMark />
-            Googleでログイン
-          </button>
-
-          <div className="my-5 flex items-center gap-3">
-            <hr className="flex-1 border-slate-200" />
-            <span className="text-xs font-semibold text-slate-400">または</span>
-            <hr className="flex-1 border-slate-200" />
-          </div>
-
-          <form onSubmit={handleLogin} className="space-y-4">
-            {error && (
-              <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700">
-                {error}
-              </div>
-            )}
-            <div>
-              <label className="mb-1 block text-sm font-semibold text-slate-700">メールアドレス</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="focus-ring w-full rounded-md border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none"
-                placeholder="example@email.com"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-semibold text-slate-700">パスワード</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="focus-ring w-full rounded-md border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none"
-                placeholder="6文字以上"
-              />
-            </div>
             <button
-              type="submit"
-              disabled={loading}
-              className="focus-ring primary-action w-full rounded-md py-3 text-sm font-bold disabled:opacity-60"
+              onClick={handleGoogleLogin}
+              className="focus-ring mt-6 flex w-full items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
             >
-              {loading ? "ログイン中..." : "ログイン"}
+              <GoogleMark />
+              Googleでログイン
             </button>
-          </form>
 
-          <p className="mt-5 text-center text-sm text-slate-600">
-            アカウントがない場合は{" "}
-            <Link href="/auth/signup" className="font-bold text-indigo-700 hover:underline">
-              新規登録
-            </Link>
-          </p>
-        </section>
+            <div className="my-5 flex items-center gap-3">
+              <hr className="flex-1 border-slate-200" />
+              <span className="text-xs font-semibold text-slate-400">または</span>
+              <hr className="flex-1 border-slate-200" />
+            </div>
+
+            <form onSubmit={handleLogin} className="space-y-4">
+              {error && (
+                <div className="rounded-xl border border-red-200 bg-red-50 p-3.5 text-sm font-semibold text-red-700">
+                  {error}
+                </div>
+              )}
+              <div>
+                <label className="mb-1.5 block text-sm font-bold text-slate-700">メールアドレス</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  placeholder="example@email.com"
+                  className="focus-ring w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 transition focus:border-blue-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-bold text-slate-700">パスワード</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  placeholder="6文字以上"
+                  className="focus-ring w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 transition focus:border-blue-500 focus:outline-none"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="focus-ring primary-action w-full rounded-xl py-3 text-sm font-black disabled:opacity-60"
+              >
+                {loading ? "ログイン中…" : "ログイン →"}
+              </button>
+            </form>
+
+            <p className="mt-5 text-center text-sm text-slate-500">
+              アカウントがない場合は{" "}
+              <Link href="/auth/signup" className="font-black text-slate-900 underline underline-offset-2 hover:no-underline">
+                新規登録
+              </Link>
+            </p>
+          </div>
+        </div>
+
       </div>
     </div>
   );
