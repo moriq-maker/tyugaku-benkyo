@@ -183,27 +183,23 @@ export default function QuizClient({
   }, [selected, current, results, isLastQuestion, subject, grade, mode, router, isShortAnswer, problemFormat, category]);
 
   return (
-    <div className="mx-auto max-w-5xl">
-      <div className="mb-4 flex items-center justify-between gap-3">
+    <div className="mx-auto max-w-2xl">
+      {/* ヘッダー行 */}
+      <div className="mb-3 flex items-center justify-between gap-3">
         <Link
           href={`/subjects/${subject.name_en}`}
           className="focus-ring min-w-0 rounded-md px-2 py-1 text-sm font-semibold text-slate-600 transition hover:bg-white hover:text-slate-950"
         >
           <span className="truncate">← {subject.name}</span>
         </Link>
-        <span className="rounded-md border border-slate-200 bg-white/85 px-3 py-1.5 text-xs font-bold text-slate-600 shadow-sm">
+        <span className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600">
           {mode === "review" ? "優先復習" : mode === "bookmarked" ? "ブックマーク" : problemFormat === "short_answer" ? "短答式" : "4択"}
         </span>
       </div>
-      {category && (
-        <div className="mb-4 rounded-md border border-indigo-100 bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-800 shadow-sm">
-          単元: {category}
-        </div>
-      )}
 
-      {/* モバイル：コンパクト進捗バー */}
-      <div className="mb-4 flex items-center gap-3 lg:hidden">
-        <span className="text-sm font-black text-slate-900 tabular-nums">
+      {/* 進捗バー */}
+      <div className="mb-4 flex items-center gap-3">
+        <span className="text-sm font-black text-slate-900 tabular-nums shrink-0">
           {currentIndex + 1}<span className="text-xs font-bold text-slate-400"> / {problems.length}</span>
         </span>
         <div className="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden">
@@ -212,39 +208,17 @@ export default function QuizClient({
             style={{ width: `${progress}%` }}
           />
         </div>
-        <span className="text-xs font-bold text-slate-500">{progress}%</span>
+        <span className="text-xs font-bold text-slate-500 shrink-0">{progress}%</span>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[280px_1fr] lg:items-start">
-        {/* デスクトップ：サイドバー */}
-        <aside className="study-hero hidden rounded-lg p-5 lg:block lg:sticky lg:top-24">
-          <div className="hero-content">
-            <p className="text-xs font-black text-cyan-100">進捗</p>
-            <p className="mt-2 text-4xl font-black text-white">
-              {currentIndex + 1}
-              <span className="text-base font-bold text-slate-400"> / {problems.length}</span>
-            </p>
-            <p className="mt-2 text-sm font-semibold text-slate-300">{progress}% 完了</p>
-            <div className="mt-5 h-3 rounded-full bg-white/10">
-              <div
-                className="h-3 rounded-full bg-cyan-400 transition-all duration-300"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-            <div className="mt-5 grid grid-cols-2 gap-2">
-              <div className="data-tile rounded-md p-3">
-                <p className="text-[11px] font-bold text-slate-400">教科</p>
-                <p className="mt-1 text-sm font-black text-white">{subject.name}</p>
-              </div>
-              <div className="data-tile rounded-md p-3">
-                <p className="text-[11px] font-bold text-slate-400">形式</p>
-                <p className="mt-1 text-sm font-black text-white">{isShortAnswer ? "短答" : "4択"}</p>
-              </div>
-            </div>
-          </div>
-        </aside>
+      {category && (
+        <div className="mb-4 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-600">
+          単元: {category}
+        </div>
+      )}
 
-      <section className="panel overflow-hidden rounded-lg">
+      {/* 問題カード */}
+      <section className="panel overflow-hidden">
         <div className="border-b border-slate-200 bg-white p-5">
           <div className="mb-4 flex flex-wrap items-center gap-2">
             <span className="rounded-md bg-slate-950 px-2 py-1 text-xs font-bold text-white">
@@ -269,7 +243,7 @@ export default function QuizClient({
               {current.passage}
             </div>
           )}
-          <h1 className="text-2xl font-black leading-9 text-slate-950">
+          <h1 className="text-xl font-black leading-8 text-slate-950 sm:text-2xl sm:leading-9">
             {current.question}
           </h1>
         </div>
@@ -307,7 +281,7 @@ export default function QuizClient({
               const isCorrect = choice === current.answer;
               const isSelected = choice === selected;
 
-              let choiceStyle = "border-slate-200 bg-white text-slate-800 hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md";
+              let choiceStyle = "border-slate-200 bg-white text-slate-800 hover:border-slate-400";
               if (showAnswer) {
                 if (isCorrect) choiceStyle = "border-emerald-500 bg-emerald-50 text-emerald-900";
                 else if (isSelected) choiceStyle = "border-red-500 bg-red-50 text-red-900";
@@ -333,20 +307,21 @@ export default function QuizClient({
           )}
         </div>
       </section>
-      </div>
 
+      {/* 解説 */}
       {showAnswer && current.explanation && (
-        <section className="ml-auto mt-4 max-w-3xl rounded-lg border border-blue-200 bg-blue-50/90 p-4 shadow-sm">
+        <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-4">
           <p className="text-sm font-black text-blue-900">解説</p>
           <p className="mt-2 text-sm leading-6 text-blue-900">{current.explanation}</p>
-        </section>
+        </div>
       )}
 
-      <div className="sticky bottom-0 ml-auto mt-4 max-w-3xl border-t border-slate-200/60 bg-white/95 py-3 backdrop-blur-xl">
+      {/* 固定ボタン */}
+      <div className="sticky bottom-0 mt-4 border-t border-slate-200 bg-white/95 py-3 backdrop-blur-sm">
         <button
           onClick={showAnswer ? handleNext : isShortAnswer ? handleCheckShortAnswer : undefined}
           disabled={saving || !selected?.trim()}
-          className="focus-ring primary-action mt-4 w-full rounded-md py-3 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-60"
+          className="focus-ring primary-action w-full rounded-md py-3 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-60"
         >
           {saving
             ? "保存中..."
