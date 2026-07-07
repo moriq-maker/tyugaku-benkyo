@@ -201,15 +201,30 @@ export default function QuizClient({
         </div>
       )}
 
+      {/* モバイル：コンパクト進捗バー */}
+      <div className="mb-4 flex items-center gap-3 lg:hidden">
+        <span className="text-sm font-black text-slate-900 tabular-nums">
+          {currentIndex + 1}<span className="text-xs font-bold text-slate-400"> / {problems.length}</span>
+        </span>
+        <div className="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden">
+          <div
+            className="h-2 rounded-full bg-slate-800 transition-all duration-300"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+        <span className="text-xs font-bold text-slate-500">{progress}%</span>
+      </div>
+
       <div className="grid gap-4 lg:grid-cols-[280px_1fr] lg:items-start">
-        <aside className="study-hero rounded-lg p-5 lg:sticky lg:top-24">
+        {/* デスクトップ：サイドバー */}
+        <aside className="study-hero hidden rounded-lg p-5 lg:block lg:sticky lg:top-24">
           <div className="hero-content">
-            <p className="text-xs font-black text-cyan-100">SESSION</p>
+            <p className="text-xs font-black text-cyan-100">進捗</p>
             <p className="mt-2 text-4xl font-black text-white">
               {currentIndex + 1}
               <span className="text-base font-bold text-slate-400"> / {problems.length}</span>
             </p>
-            <p className="mt-2 text-sm font-semibold text-slate-300">{progress}% complete</p>
+            <p className="mt-2 text-sm font-semibold text-slate-300">{progress}% 完了</p>
             <div className="mt-5 h-3 rounded-full bg-white/10">
               <div
                 className="h-3 rounded-full bg-cyan-400 transition-all duration-300"
